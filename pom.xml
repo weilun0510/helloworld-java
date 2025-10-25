@@ -75,6 +75,29 @@
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
             <version>4.5.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>3.5.7</version>
+        </dependency>
+
+        <!-- mysql-->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <!-- scope（作用域）：表示这个依赖在项目的哪些阶段可用-->
+            <!-- runtime 表示 运行时需要，但编译时不需要-->
+            <scope>runtime</scope>
+            <!-- 为什么不需要version: 省略 <version> 时，Maven 会自动使用 Spring Boot 管理的安全版本-->
+        </dependency>
+
+        <!-- 数据连接池 druid (提高数据库连接效率) -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-starter</artifactId>
+            <version>1.1.20</version>
+        </dependency>
 	</dependencies>
 
 	<build>
