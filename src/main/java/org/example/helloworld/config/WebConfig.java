@@ -9,9 +9,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         // 不传路径，则拦截所有
-        // registry.addInterceptor(new LoginInterceptor()).addPathPatterns();
+         registry.addInterceptor(new LoginInterceptor()).addPathPatterns();
 
         // 拦截user下的所有
-        registry.addInterceptor(new LoginInterceptor()).addPathPatterns("/user/**");
+//        registry.addInterceptor(new LoginInterceptor()).addPathPatterns("/user/**");
     }
 }

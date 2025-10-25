@@ -39,6 +39,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
+            <!-- optional 此依赖只在当前项目中生效，不会被传递到依赖此项目的其他项目中-->
             <optional>true</optional>
         </dependency>
 
@@ -52,6 +53,27 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- OpenAPI-->
+<!--        <dependency>-->
+<!--            <groupId>org.springdoc</groupId>-->
+<!--            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>-->
+<!--            <version>2.3.0</version>-->
+<!--        </dependency>-->
+
+        <!-- OpenAPI 3.1.1 支持 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <!-- Knife4j 增强 UI（Spring Boot 3.x 用这个版本）-->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.5.0</version>
         </dependency>
 	</dependencies>
 

@@ -1,11 +1,16 @@
 package org.example.helloworld.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.helloworld.entity.User;
 import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.web.bind.annotation.*;
 
+
+@Tag(name = "hello管理")
 @RestController
 public class HelloController {
+    @Operation(summary = "hello")
     @GetMapping("/hello")
     public String hello(String name, String phone){
         System.out.println(phone);
