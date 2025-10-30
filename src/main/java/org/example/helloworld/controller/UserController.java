@@ -1,5 +1,6 @@
 package org.example.helloworld.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.Data;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -8,6 +9,8 @@ import org.example.helloworld.entity.User;
 import org.example.helloworld.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import java.util.List;
 
@@ -82,5 +85,17 @@ public class UserController {
         // user.setId(id); // 确保 ID 被设置进去
         int result = userMapper.updateById(user);
         return result > 0 ? "更新成功" : "更新失败";
+    }
+
+    // 分页查询
+    @GetMapping("/user/page")
+    public IPage page(@RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
+
+        Page<User> pageParam = new Page<>(page, pageSize);
+
+        IPage userPage = userMapper.selectPage(pageParam, null);
+
+        return userPage;
     }
 }
