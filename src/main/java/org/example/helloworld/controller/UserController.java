@@ -1,6 +1,9 @@
 package org.example.helloworld.controller;
 
 import lombok.Data;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
 import org.example.helloworld.entity.User;
 import org.example.helloworld.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,18 +20,30 @@ public class UserController {
     @Autowired
     private UserMapper userMapper;
 
-    @GetMapping("/user")
-    public List<User> query() {
-        List<User> list = userMapper.selectList();
-        // 使用 BaseMapper 提供的内置方法
-        // List<User> list = userMapper.selectList(null);
-        System.out.println(list);
-        return list;
-    }
+    // @GetMapping("/user")
+    // public List<User> query() {
+    // List<User> list = userMapper.selectList();
+    // // 使用 BaseMapper 提供的内置方法
+    // // List<User> list = userMapper.selectList(null);
+    // System.out.println(list);
+    // return list;
+    // }
 
-    @GetMapping("/user/findAll")
-    public List<User> findAll() {
-        return userMapper.selectAllUserAndOrders();
+    // @GetMapping("/user/findAll")
+    // public List<User> findAll() {
+    // return userMapper.selectAllUserAndOrders();
+    // }
+
+    // ------------------ baseMapper 提供的内置方法 ------------------
+
+    // 条件查询
+    @GetMapping("/user/findByUsername")
+    public List<User> findByUsername(@RequestParam(value = "username", required = false) String username) {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        if (username != null) {
+            queryWrapper.eq("username", username);
+        }
+        return userMapper.selectList(queryWrapper);
     }
 
     @PostMapping("/user")
@@ -51,21 +66,21 @@ public class UserController {
         return "根据ID获取用户信息";
     }
 
-    // @DeleteMapping("/user/{id}")
-    // public String delete(@PathVariable int id) {
-    // int i = userMapper.deleteById(id);
-    // System.out.println(i);
-    // if(i>0){
-    // return "删除成功";
-    // } else {
-    // return "删除失败";
-    // }
-    // }
-    //
-    // @PutMapping("/user/{id}")
-    // public String update(@PathVariable int id, @RequestBody User user) {
-    //// user.setId(id); // 确保 ID 被设置进去
-    // int result = userMapper.updateById(user);
-    // return result > 0 ? "更新成功" : "更新失败";
-    // }
+    @DeleteMapping("/user/{id}")
+    public String delete(@PathVariable int id) {
+        int i = userMapper.deleteById(id);
+        System.out.println(i);
+        if (i > 0) {
+            return "删除成功";
+        } else {
+            return "删除失败";
+        }
+    }
+
+    @PutMapping("/user/{id}")
+    public String update(@PathVariable int id, @RequestBody User user) {
+        // user.setId(id); // 确保 ID 被设置进去
+        int result = userMapper.updateById(user);
+        return result > 0 ? "更新成功" : "更新失败";
+    }
 }
