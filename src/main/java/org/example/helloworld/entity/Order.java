@@ -27,4 +27,7 @@ public class Order {
 
     /** 用户ID - 外键 */
     private Integer uid;
+
+    @TableField(exist = false) // 告诉mybatis-plus,数据库不存在该字段
+    private User user; // 关联的用户
 }

@@ -32,4 +32,7 @@ public interface UserMapper {
             @Result(column = "id", property = "orders", javaType = List.class, many = @Many(select = "org.example.helloworld.mapper.OrderMapper.selectByUid"))
     })
     public List<User> selectAllUserAndOrders();
+
+    @Select("select * from user where id = #{id}")
+    public User selectById(@Param("id") Integer id);
 }
