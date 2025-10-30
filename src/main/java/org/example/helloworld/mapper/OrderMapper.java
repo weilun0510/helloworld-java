@@ -8,6 +8,12 @@ import org.example.helloworld.entity.Order;
 import java.util.List;
 
 public interface OrderMapper extends BaseMapper<Order> {
+    /**
+     * 根据用户ID查询该用户的所有订单
+     * 
+     * @param uid 用户ID
+     * @return 订单列表
+     */
     @Select("select * from `order` where uid = #{uid}")
-    List<Order> selectByUid(int uid);
+    List<Order> selectByUid(@Param("uid") Integer uid);
 }

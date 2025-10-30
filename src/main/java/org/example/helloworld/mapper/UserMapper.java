@@ -1,6 +1,5 @@
 package org.example.helloworld.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.*;
 import org.example.helloworld.entity.User;
 
@@ -19,10 +18,15 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     public int insert(User user);
 
-    // 查询用户及其所有订单
+    /**
+     * 查询用户及其所有订单（一对多关联查询）
+     * 使用 @Results 定义结果映射，通过 @Many 注解实现懒加载关联订单
+     * 
+     * @return 用户列表，每个用户包含其所有订单
+     */
     @Select("select * from user")
-    @Results({
-            @Result(column = "id", property = "id"),
+    @Results(id = "UserWithOrdersMap", value = {
+            @Result(column = "id", property = "id", id = true),
             @Result(column = "username", property = "username"),
             @Result(column = "password", property = "password"),
             @Result(column = "id", property = "orders", javaType = List.class, many = @Many(select = "org.example.helloworld.mapper.OrderMapper.selectByUid"))
