@@ -18,39 +18,54 @@ public class UserController {
     private UserMapper userMapper;
 
     @GetMapping("/user")
-    public String query(){
-        List<User> list = userMapper.find();
+    public List<User> query() {
+        List<User> list = userMapper.selectList();
+        // 使用 BaseMapper 提供的内置方法
+        // List<User> list = userMapper.selectList(null);
         System.out.println(list);
-        return "user";
+        return list;
     }
 
+    @GetMapping("/user/findAll")
+    public List<User> findAll() {
+        return userMapper.selectAllUserAndOrders();
+    }
 
+    @PostMapping("/user")
+    public String save(@RequestBody User user) {
+
+        int i = userMapper.insert(user);
+        System.out.println("插入后，数据库生成的ID: " + user.getId());
+
+        if (i > 0) {
+            return "插入成功，生成的ID为: " + user.getId();
+        } else {
+            return "插入失败";
+        }
+    }
+
+    // 获取动态参数
     @GetMapping("/user/{id}")
     public String getUserById(@PathVariable int id) {
         System.out.println(id);
         return "根据ID获取用户信息";
     }
 
-    @PostMapping("/user")
-    public String save(@RequestBody User user) {
-//        System.out.println(user);
-        int i = userMapper.insert(user);
-        if(i>0){
-            return "插入成功";
-        } else {
-            return "插入失败";
-        }
-    }
-
-    @DeleteMapping("/user/{id}")
-    public String delete(@PathVariable int id) {
-        System.out.println(id);
-        return "删除用户";
-    }
-
-    @PutMapping("/user")
-    public String update(@RequestBody User user) {
-        System.out.println(user);
-        return "更新用户";
-    }
+    // @DeleteMapping("/user/{id}")
+    // public String delete(@PathVariable int id) {
+    // int i = userMapper.deleteById(id);
+    // System.out.println(i);
+    // if(i>0){
+    // return "删除成功";
+    // } else {
+    // return "删除失败";
+    // }
+    // }
+    //
+    // @PutMapping("/user/{id}")
+    // public String update(@PathVariable int id, @RequestBody User user) {
+    //// user.setId(id); // 确保 ID 被设置进去
+    // int result = userMapper.updateById(user);
+    // return result > 0 ? "更新成功" : "更新失败";
+    // }
 }
