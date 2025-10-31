@@ -1,0 +1,50 @@
+package org.example.helloworld.service;
+
+import org.example.helloworld.entity.UserEntity;
+
+/**
+ * 用户服务接口
+ */
+public interface UserService {
+
+  /**
+   * 用户登录
+   * 
+   * @param username 用户名
+   * @param password 密码
+   * @return 登录成功返回 token，失败返回 null
+   */
+  String login(String username, String password);
+
+  /**
+   * 根据用户名查询用户
+   * 
+   * @param username 用户名
+   * @return 用户实体
+   */
+  UserEntity getUserByUsername(String username);
+
+  /**
+   * 验证 Token 是否有效
+   * 
+   * @param token JWT Token
+   * @return true 表示有效，false 表示无效
+   */
+  boolean validateToken(String token);
+
+  /**
+   * 从 Token 中获取用户名
+   * 
+   * @param token JWT Token
+   * @return 用户名
+   */
+  String getUsernameFromToken(String token);
+
+  /**
+   * 用户注册
+   * 
+   * @param user 用户实体
+   * @return 注册成功返回 true，失败返回 false
+   */
+  boolean register(UserEntity user);
+}

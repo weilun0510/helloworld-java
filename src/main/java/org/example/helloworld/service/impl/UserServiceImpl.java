@@ -1,0 +1,153 @@
+package org.example.helloworld.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.example.helloworld.entity.UserEntity;
+import org.example.helloworld.mapper.UserMapper;
+import org.example.helloworld.service.UserService;
+import org.example.helloworld.utils.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
+
+import java.nio.charset.StandardCharsets;
+
+/**
+ * 用户服务实现类
+ */
+@Service
+public class UserServiceImpl implements UserService {
+
+  @Autowired
+  private UserMapper userMapper;
+
+  /**
+   * 用户登录
+   * 
+   * @param username 用户名
+   * @param password 密码
+   * @return 登录成功返回 token，失败返回 null
+   */
+  @Override
+  public String login(String username, String password) {
+    // 参数校验
+    if (username == null || username.trim().isEmpty()) {
+      throw new RuntimeException("用户名不能为空");
+    }
+    if (password == null || password.trim().isEmpty()) {
+      throw new RuntimeException("密码不能为空");
+    }
+
+    // 查询用户
+    QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
+    queryWrapper.eq("username", username);
+    UserEntity user = userMapper.selectOne(queryWrapper);
+
+    // 用户不存在
+    if (user == null) {
+      throw new RuntimeException("用户名或密码错误");
+    }
+
+    // 验证密码（这里简单比较，实际项目中应该使用加密后的密码比较）
+    // 如果数据库存储的是加密密码，需要将输入的密码加密后再比较
+    if (!password.equals(user.getPassword())) {
+      throw new RuntimeException("用户名或密码错误");
+    }
+
+    // 生成 token
+    String token = JwtUtil.generateToken(username);
+    return token;
+  }
+
+  /**
+   * 根据用户名查询用户
+   * 
+   * @param username 用户名
+   * @return 用户实体
+   */
+  @Override
+  public UserEntity getUserByUsername(String username) {
+    if (username == null || username.trim().isEmpty()) {
+      throw new RuntimeException("用户名不能为空");
+    }
+
+    QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
+    queryWrapper.eq("username", username);
+    UserEntity user = userMapper.selectOne(queryWrapper);
+
+    if (user == null) {
+      throw new RuntimeException("用户不存在");
+    }
+
+    // 不返回密码字段
+    user.setPassword(null);
+    return user;
+  }
+
+  /**
+   * 验证 Token 是否有效
+   * 
+   * @param token JWT Token
+   * @return true 表示有效，false 表示无效
+   */
+  @Override
+  public boolean validateToken(String token) {
+    if (token == null || token.trim().isEmpty()) {
+      return false;
+    }
+    return JwtUtil.validateToken(token);
+  }
+
+  /**
+   * 从 Token 中获取用户名
+   * 
+   * @param token JWT Token
+   * @return 用户名
+   */
+  @Override
+  public String getUsernameFromToken(String token) {
+    if (token == null || token.trim().isEmpty()) {
+      throw new RuntimeException("Token 不能为空");
+    }
+
+    try {
+      return JwtUtil.getUsernameFromToken(token);
+    } catch (Exception e) {
+      throw new RuntimeException("Token 无效或已过期");
+    }
+  }
+
+  /**
+   * 用户注册
+   * 
+   * @param user 用户实体
+   * @return 注册成功返回 true，失败返回 false
+   */
+  @Override
+  public boolean register(UserEntity user) {
+    // 参数校验
+    if (user == null) {
+      throw new RuntimeException("用户信息不能为空");
+    }
+    if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+      throw new RuntimeException("用户名不能为空");
+    }
+    if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+      throw new RuntimeException("密码不能为空");
+    }
+
+    // 检查用户名是否已存在
+    QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
+    queryWrapper.eq("username", user.getUsername());
+    Long count = userMapper.selectCount(queryWrapper);
+    if (count > 0) {
+      throw new RuntimeException("用户名已存在");
+    }
+
+    // 密码加密（可选，实际项目中建议使用 BCrypt 等加密方式）
+    // user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes(StandardCharsets.UTF_8)));
+
+    // 插入用户
+    int result = userMapper.insert(user);
+    return result > 0;
+  }
+}

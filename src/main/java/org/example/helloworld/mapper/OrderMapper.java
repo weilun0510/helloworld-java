@@ -6,12 +6,15 @@ import org.apache.ibatis.annotations.One;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Select;
-import org.example.helloworld.entity.Order;
-import org.example.helloworld.entity.User;
+import org.example.helloworld.entity.OrderEntity;
+import org.example.helloworld.entity.UserEntity;
 
 import java.util.List;
 
-public interface OrderMapper extends BaseMapper<Order> {
+/**
+ * 订单 Mapper 接口
+ */
+public interface OrderMapper extends BaseMapper<OrderEntity> {
     /**
      * 根据用户ID查询该用户的所有订单
      * 
@@ -19,7 +22,7 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return 订单列表
      */
     @Select("select * from `order` where uid = #{uid}")
-    List<Order> selectByUid(@Param("uid") Integer uid);
+    List<OrderEntity> selectByUid(@Param("uid") Integer uid);
 
     /**
      * 查询所有订单及其关联的用户
@@ -31,7 +34,7 @@ public interface OrderMapper extends BaseMapper<Order> {
             @Result(column = "id", property = "id", id = true),
             @Result(column = "order_time", property = "orderTime"),
             @Result(column = "total", property = "total"),
-            @Result(column = "uid", property = "user", javaType = User.class, one = @One(select = "org.example.helloworld.mapper.UserMapper.selectById"))
+            @Result(column = "uid", property = "user", javaType = UserEntity.class, one = @One(select = "org.example.helloworld.mapper.UserMapper.selectById"))
     })
-    List<Order> selectAllOrdersAndUsers();
+    List<OrderEntity> selectAllOrdersAndUsers();
 }

@@ -3,12 +3,14 @@ package org.example.helloworld.mapper;
 import org.apache.ibatis.annotations.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.example.helloworld.entity.User;
+import org.example.helloworld.entity.UserEntity;
 
 import java.util.List;
 
-// 使用mybatisplus BaseMapper 提供的方法
-public interface UserMapper extends BaseMapper<User> {
+/**
+ * 用户 Mapper 接口
+ */
+public interface UserMapper extends BaseMapper<UserEntity> {
 }
 
 // public interface UserMapper {

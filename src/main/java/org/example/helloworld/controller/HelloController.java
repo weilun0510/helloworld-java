@@ -2,7 +2,7 @@ package org.example.helloworld.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.example.helloworld.entity.User;
+import org.example.helloworld.entity.UserEntity;
 import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,7 +43,7 @@ public class HelloController {
     // 接收json格式需要添加 @RequestBody 注解
     @PostMapping("/postTest2")
 //    @RequestMapping(value = "/postTest2", method = RequestMethod.POST)
-    public String postTest2(@RequestBody User user){
+    public String postTest2(@RequestBody UserEntity user){
         // 如果打印内容没显示字段值，可以使用Lombok @Data简化
         System.out.println(user);
         return "post请求 json格式";
