@@ -40,6 +40,12 @@ public class UserController {
     // return userMapper.selectAllUserAndOrders();
     // }
 
+    /**
+     * 登录
+     * 
+     * @param user 用户名和密码
+     * @return 返回token
+     */
     @PostMapping("/login")
     public Result login(@RequestBody User user) {
         String token = JwtUtil.generateToken(user.getUsername());
@@ -49,6 +55,19 @@ public class UserController {
         } else {
             return Result.error().message("登录失败");
         }
+    }
+
+    /**
+     * 根据用户名查询用户
+     * 
+     * @param username
+     * @return 返回用户
+     */
+    @GetMapping("/info")
+    public Result info(String token) {
+        String username = JwtUtil.getUsernameFromToken(token);
+        String url = "https://aisearch.cdn.bcebos.com/homepage/dashboard/ai_picture_create/04.jpg";
+        return Result.ok().data("name", username).data("avatar", url);
     }
 
     // ------------------ baseMapper 提供的内置方法 ------------------
