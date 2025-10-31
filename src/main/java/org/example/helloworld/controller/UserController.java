@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import org.example.helloworld.entity.User;
 import org.example.helloworld.mapper.UserMapper;
+import org.example.helloworld.utils.JwtUtil;
+import org.example.helloworld.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +17,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 @Data
+@RequestMapping("/user")
 @RestController
 public class UserController {
 
@@ -23,7 +26,7 @@ public class UserController {
     @Autowired
     private UserMapper userMapper;
 
-    // @GetMapping("/user")
+    // @GetMapping("")
     // public List<User> query() {
     // List<User> list = userMapper.selectList();
     // // 使用 BaseMapper 提供的内置方法
@@ -32,15 +35,26 @@ public class UserController {
     // return list;
     // }
 
-    // @GetMapping("/user/findAll")
+    // @GetMapping("/findAll")
     // public List<User> findAll() {
     // return userMapper.selectAllUserAndOrders();
     // }
 
+    @PostMapping("/login")
+    public Result login(@RequestBody User user) {
+        String token = JwtUtil.generateToken(user.getUsername());
+        System.out.println("token:" + token);
+        if (token != null) {
+            return Result.ok().data("token", token);
+        } else {
+            return Result.error().message("登录失败");
+        }
+    }
+
     // ------------------ baseMapper 提供的内置方法 ------------------
 
     // 条件查询
-    @GetMapping("/user/findByUsername")
+    @GetMapping("/findByUsername")
     public List<User> findByUsername(@RequestParam(value = "username", required = false) String username) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
         if (username != null) {
@@ -49,7 +63,7 @@ public class UserController {
         return userMapper.selectList(queryWrapper);
     }
 
-    @PostMapping("/user")
+    @PostMapping("")
     public String save(@RequestBody User user) {
 
         int i = userMapper.insert(user);
@@ -63,13 +77,13 @@ public class UserController {
     }
 
     // 获取动态参数
-    @GetMapping("/user/{id}")
+    @GetMapping("/{id}")
     public String getUserById(@PathVariable int id) {
         System.out.println(id);
         return "根据ID获取用户信息";
     }
 
-    @DeleteMapping("/user/{id}")
+    @DeleteMapping("/{id}")
     public String delete(@PathVariable int id) {
         int i = userMapper.deleteById(id);
         System.out.println(i);
@@ -80,21 +94,27 @@ public class UserController {
         }
     }
 
-    @PutMapping("/user/{id}")
+    @PutMapping("/{id}")
     public String update(@PathVariable int id, @RequestBody User user) {
         // user.setId(id); // 确保 ID 被设置进去
         int result = userMapper.updateById(user);
         return result > 0 ? "更新成功" : "更新失败";
     }
 
-    // 分页查询
-    @GetMapping("/user/page")
-    public IPage page(@RequestParam(value = "page", defaultValue = "1") int page,
+    /**
+     * 分页查询用户
+     * 
+     * @param page     页码，默认第1页
+     * @param pageSize 每页大小，默认10条
+     * @return 分页结果
+     */
+    @GetMapping("/page")
+    public IPage<User> page(@RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
 
         Page<User> pageParam = new Page<>(page, pageSize);
 
-        IPage userPage = userMapper.selectPage(pageParam, null);
+        IPage<User> userPage = userMapper.selectPage(pageParam, null);
 
         return userPage;
     }
