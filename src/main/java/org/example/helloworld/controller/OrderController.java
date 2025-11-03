@@ -3,9 +3,11 @@ package org.example.helloworld.controller;
 import java.util.List;
 
 import org.example.helloworld.entity.OrderEntity;
-import org.example.helloworld.mapper.OrderMapper;
+import org.example.helloworld.service.OrderService;
+import org.example.helloworld.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,8 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/order")
 public class OrderController {
+
   @Autowired
-  private OrderMapper orderMapper;
+  private OrderService orderService;
 
   /**
    * 查询所有订单及其关联的用户
@@ -24,7 +27,36 @@ public class OrderController {
    * @return 订单列表
    */
   @GetMapping("/findAll")
-  public List<OrderEntity> findAll() {
-    return orderMapper.selectAllOrdersAndUsers();
+  public Result findAll() {
+    List<OrderEntity> orders = orderService.getAllOrdersWithUsers();
+    return Result.ok().data("orders", orders);
+  }
+
+  /**
+   * 根据用户ID查询订单
+   * 
+   * @param uid 用户ID
+   * @return 订单列表
+   */
+  @GetMapping("/user/{uid}")
+  public Result getOrdersByUserId(@PathVariable Integer uid) {
+    List<OrderEntity> orders = orderService.getOrdersByUserId(uid);
+    return Result.ok().data("orders", orders);
+  }
+
+  /**
+   * 根据订单ID查询订单详情
+   * 
+   * @param id 订单ID
+   * @return 订单详情
+   */
+  @GetMapping("/{id}")
+  public Result getById(@PathVariable Integer id) {
+    OrderEntity order = orderService.getById(id);
+    if (order != null) {
+      return Result.ok().data("order", order);
+    } else {
+      return Result.error().message("订单不存在");
+    }
   }
 }

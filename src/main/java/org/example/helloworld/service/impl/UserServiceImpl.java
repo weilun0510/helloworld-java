@@ -1,11 +1,11 @@
 package org.example.helloworld.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.helloworld.entity.UserEntity;
 import org.example.helloworld.mapper.UserMapper;
 import org.example.helloworld.service.UserService;
 import org.example.helloworld.utils.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -13,12 +13,11 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * 用户服务实现类
+ * 继承 ServiceImpl 获得 MyBatis-Plus 提供的 CRUD 方法
+ * ServiceImpl<Mapper, Entity>
  */
 @Service
-public class UserServiceImpl implements UserService {
-
-  @Autowired
-  private UserMapper userMapper;
+public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> implements UserService {
 
   /**
    * 用户登录
@@ -37,10 +36,10 @@ public class UserServiceImpl implements UserService {
       throw new RuntimeException("密码不能为空");
     }
 
-    // 查询用户
+    // 查询用户（使用 baseMapper 或 this.getOne()）
     QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("username", username);
-    UserEntity user = userMapper.selectOne(queryWrapper);
+    UserEntity user = this.getOne(queryWrapper);
 
     // 用户不存在
     if (user == null) {
@@ -72,7 +71,7 @@ public class UserServiceImpl implements UserService {
 
     QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("username", username);
-    UserEntity user = userMapper.selectOne(queryWrapper);
+    UserEntity user = this.getOne(queryWrapper);
 
     if (user == null) {
       throw new RuntimeException("用户不存在");
@@ -138,7 +137,7 @@ public class UserServiceImpl implements UserService {
     // 检查用户名是否已存在
     QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("username", user.getUsername());
-    Long count = userMapper.selectCount(queryWrapper);
+    long count = this.count(queryWrapper);
     if (count > 0) {
       throw new RuntimeException("用户名已存在");
     }
@@ -146,8 +145,7 @@ public class UserServiceImpl implements UserService {
     // 密码加密（可选，实际项目中建议使用 BCrypt 等加密方式）
     // user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes(StandardCharsets.UTF_8)));
 
-    // 插入用户
-    int result = userMapper.insert(user);
-    return result > 0;
+    // 插入用户（使用 MyBatis-Plus 的 save 方法）
+    return this.save(user);
   }
 }
