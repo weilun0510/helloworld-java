@@ -24,8 +24,12 @@ public class UserEntity {
     /** 密码 */
     private String password;
 
-    /** 描述用户的所有订单 */
-    @TableField(exist = false) // 告诉mybatis-plus,数据库不存在该字段
+    /** 头像 URL（非数据库字段，业务字段） */
+    @TableField(exist = false)
+    private String avatar;
+
+    /** 描述用户的所有订单（非数据库字段） */
+    @TableField(exist = false)
     private List<OrderEntity> orders;
 }
 

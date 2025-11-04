@@ -50,7 +50,11 @@ public class Result {
   private Result() {
   }
 
-  // 成功静态方法
+  /**
+   * 成功响应（200）
+   * 
+   * @return Result 对象
+   */
   public static Result ok() {
     Result result = new Result();
     result.setSuccess(true);
@@ -59,7 +63,11 @@ public class Result {
     return result;
   }
 
-  // 失败静态方法
+  /**
+   * 失败响应（500）
+   * 
+   * @return Result 对象
+   */
   public static Result error() {
     Result result = new Result();
     result.setSuccess(false);

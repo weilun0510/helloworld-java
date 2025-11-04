@@ -24,7 +24,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
    * 
    * @param username 用户名
    * @param password 密码
-   * @return 登录成功返回 token，失败返回 null
+   * @return 登录成功返回 token，失败抛出异常
    */
   @Override
   public String login(String username, String password) {
@@ -52,8 +52,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
       throw new RuntimeException("用户名或密码错误");
     }
 
-    // 生成 token
-    String token = JwtUtil.generateToken(username);
+    // 生成 token（subject 存储用户ID，username 作为附加信息）
+    String token = JwtUtil.generateToken(user.getId(), user.getUsername());
     return token;
   }
 
@@ -83,6 +83,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
   }
 
   /**
+   * 获取用户信息（包含业务逻辑，如默认头像）
+   * 
+   * @param username 用户名
+   * @return 用户信息
+   */
+  @Override
+  public UserEntity getUserInfo(String username) {
+    UserEntity user = getUserByUsername(username);
+
+    // 设置默认头像（业务逻辑）
+    String defaultAvatar = "https://aisearch.cdn.bcebos.com/homepage/dashboard/ai_picture_create/04.jpg";
+    user.setAvatar(defaultAvatar);
+
+    return user;
+  }
+
+  /**
+   * 条件查询用户（按用户名）
+   * 
+   * @param username 用户名（可为空）
+   * @return 用户列表
+   */
+  @Override
+  public java.util.List<UserEntity> findByUsername(String username) {
+    QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
+
+    // 如果用户名不为空，添加查询条件
+    if (username != null && !username.trim().isEmpty()) {
+      queryWrapper.eq("username", username);
+    }
+
+    return this.list(queryWrapper);
+  }
+
+  /**
    * 验证 Token 是否有效
    * 
    * @param token JWT Token
@@ -94,6 +129,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
       return false;
     }
     return JwtUtil.validateToken(token);
+  }
+
+  /**
+   * 从 Token 中获取用户ID
+   * 
+   * @param token JWT Token
+   * @return 用户ID
+   */
+  @Override
+  public Integer getUserIdFromToken(String token) {
+    if (token == null || token.trim().isEmpty()) {
+      throw new RuntimeException("Token 不能为空");
+    }
+
+    try {
+      return JwtUtil.getUserIdFromToken(token);
+    } catch (Exception e) {
+      throw new RuntimeException("Token 无效或已过期");
+    }
   }
 
   /**

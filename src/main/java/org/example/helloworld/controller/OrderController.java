@@ -2,6 +2,8 @@ package org.example.helloworld.controller;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.helloworld.entity.OrderEntity;
 import org.example.helloworld.service.OrderService;
 import org.example.helloworld.utils.Result;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 订单控制器
  */
+@Tag(name = "订单管理", description = "订单查询相关接口")
 @RestController
 @RequestMapping("/order")
 public class OrderController {
@@ -26,6 +29,7 @@ public class OrderController {
    * 
    * @return 订单列表
    */
+  @Operation(summary = "查询所有订单", description = "查询所有订单及其关联的用户信息")
   @GetMapping("/findAll")
   public Result findAll() {
     List<OrderEntity> orders = orderService.getAllOrdersWithUsers();

@@ -1,46 +1,29 @@
 package org.example.helloworld.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.example.helloworld.entity.UserEntity;
-import org.example.helloworld.mapper.UserMapper;
 import org.example.helloworld.service.UserService;
 import org.example.helloworld.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-
 import java.util.List;
 
 /**
  * 用户控制器
+ * 只依赖 Service 层，不直接使用 Mapper
  */
+@Tag(name = "用户管理", description = "用户相关接口：登录、注册、CRUD")
 @RequestMapping("/user")
 @RestController
 public class UserController {
 
     @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
     private UserService userService;
-
-    // @GetMapping("")
-    // public List<User> query() {
-    // List<User> list = userMapper.selectList();
-    // // 使用 BaseMapper 提供的内置方法
-    // // List<User> list = userMapper.selectList(null);
-    // System.out.println(list);
-    // return list;
-    // }
-
-    // @GetMapping("/findAll")
-    // public List<User> findAll() {
-    // return userMapper.selectAllUserAndOrders();
-    // }
 
     /**
      * 用户登录
@@ -48,6 +31,7 @@ public class UserController {
      * @param user 用户登录信息（用户名和密码）
      * @return 返回 token 和用户信息
      */
+    @Operation(summary = "用户登录", description = "使用用户名和密码登录，返回JWT Token")
     @PostMapping("/login")
     public Result login(@RequestBody UserEntity user) {
         // 调用 service 层进行登录校验
@@ -61,31 +45,39 @@ public class UserController {
     }
 
     /**
-     * 获取用户信息
+     * 获取当前登录用户信息
+     * 拦截器已验证 Token，直接从请求中获取用户ID
      * 
-     * @param token JWT Token
+     * @param request HTTP 请求对象
      * @return 返回用户信息
      */
+    @Operation(summary = "获取当前用户信息", description = "根据Token获取当前登录用户的信息")
     @GetMapping("/info")
-    public Result info(@RequestParam("token") String token) {
-        // 验证 token
-        if (!userService.validateToken(token)) {
-            return Result.error().message("Token 无效或已过期");
+    public Result info(jakarta.servlet.http.HttpServletRequest request) {
+        // 从请求属性中获取用户ID（由拦截器设置）
+        Integer userId = (Integer) request.getAttribute("userId");
+
+        if (userId == null) {
+            return Result.error().message("获取用户信息失败");
         }
 
-        // 从 token 中获取用户名
-        String username = userService.getUsernameFromToken(token);
+        // 根据用户ID查询用户信息
+        UserEntity user = userService.getById(userId);
+        if (user == null) {
+            return Result.error().message("用户不存在");
+        }
 
-        // 查询用户信息
-        UserEntity user = userService.getUserByUsername(username);
+        // 设置默认头像（业务逻辑）
+        String defaultAvatar = "https://aisearch.cdn.bcebos.com/homepage/dashboard/ai_picture_create/04.jpg";
+        user.setAvatar(defaultAvatar);
 
-        // 默认头像
-        String avatarUrl = "https://aisearch.cdn.bcebos.com/homepage/dashboard/ai_picture_create/04.jpg";
+        // 不返回密码
+        user.setPassword(null);
 
         return Result.ok()
                 .data("username", user.getUsername())
                 .data("id", user.getId())
-                .data("avatar", avatarUrl);
+                .data("avatar", user.getAvatar());
     }
 
     /**
@@ -94,6 +86,7 @@ public class UserController {
      * @param user 用户注册信息
      * @return 注册结果
      */
+    @Operation(summary = "用户注册", description = "注册新用户账号")
     @PostMapping("/register")
     public Result register(@RequestBody UserEntity user) {
         boolean success = userService.register(user);
@@ -104,9 +97,7 @@ public class UserController {
         }
     }
 
-    // ------------------ baseMapper 提供的内置方法 ------------------
-
-    // ------------------ 以下是其他 CRUD 接口 ------------------
+    // ==================== CRUD 接口 ====================
 
     /**
      * 条件查询用户
@@ -116,11 +107,8 @@ public class UserController {
      */
     @GetMapping("/findByUsername")
     public Result findByUsername(@RequestParam(value = "username", required = false) String username) {
-        QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
-        if (username != null && !username.trim().isEmpty()) {
-            queryWrapper.eq("username", username);
-        }
-        List<UserEntity> users = userMapper.selectList(queryWrapper);
+        // 业务逻辑（构建查询条件）交给 Service 层处理
+        List<UserEntity> users = userService.findByUsername(username);
         return Result.ok().data("users", users);
     }
 
@@ -132,8 +120,8 @@ public class UserController {
      */
     @PostMapping("")
     public Result save(@RequestBody UserEntity user) {
-        int i = userMapper.insert(user);
-        if (i > 0) {
+        boolean success = userService.save(user);
+        if (success) {
             return Result.ok()
                     .message("插入成功")
                     .data("id", user.getId());
@@ -150,7 +138,7 @@ public class UserController {
      */
     @GetMapping("/{id}")
     public Result getUserById(@PathVariable Integer id) {
-        UserEntity user = userMapper.selectById(id);
+        UserEntity user = userService.getById(id);
         if (user != null) {
             // 不返回密码
             user.setPassword(null);
@@ -168,8 +156,8 @@ public class UserController {
      */
     @DeleteMapping("/{id}")
     public Result delete(@PathVariable Integer id) {
-        int i = userMapper.deleteById(id);
-        if (i > 0) {
+        boolean success = userService.removeById(id);
+        if (success) {
             return Result.ok().message("删除成功");
         } else {
             return Result.error().message("删除失败");
@@ -186,8 +174,8 @@ public class UserController {
     @PutMapping("/{id}")
     public Result update(@PathVariable Integer id, @RequestBody UserEntity user) {
         user.setId(id);
-        int result = userMapper.updateById(user);
-        if (result > 0) {
+        boolean success = userService.updateById(user);
+        if (success) {
             return Result.ok().message("更新成功");
         } else {
             return Result.error().message("更新失败");
@@ -206,7 +194,7 @@ public class UserController {
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
 
         Page<UserEntity> pageParam = new Page<>(page, pageSize);
-        IPage<UserEntity> userPage = userMapper.selectPage(pageParam, null);
+        IPage<UserEntity> userPage = userService.page(pageParam);
 
         return Result.ok()
                 .data("total", userPage.getTotal())
