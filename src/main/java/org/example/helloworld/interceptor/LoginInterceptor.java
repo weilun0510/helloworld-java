@@ -76,7 +76,7 @@ public class LoginInterceptor implements HandlerInterceptor {
      * @throws Exception 异常
      */
     private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws Exception {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+        response.setStatus(HttpServletResponse.SC_OK); // 401
         response.setContentType("application/json;charset=UTF-8");
 
         Result result = Result.error()
