@@ -17,4 +17,12 @@ public interface ProjectService extends IService<ProjectEntity> {
    * @return 项目列表
    */
   List<ProjectEntity> getAllProjects();
+
+  /**
+   * 创建项目
+   * 
+   * @param project 项目信息
+   * @return 创建结果
+   */
+  boolean createProject(ProjectEntity project);
 }

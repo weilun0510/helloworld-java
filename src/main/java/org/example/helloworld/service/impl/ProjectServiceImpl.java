@@ -7,6 +7,7 @@ import org.example.helloworld.service.ProjectService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 /**
  * 订单服务实现类
@@ -24,5 +25,22 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
     @Override
     public List<ProjectEntity> getAllProjects() {
         return baseMapper.selectList(null);
+    }
+
+    @Override
+    public boolean createProject(ProjectEntity project) {
+        if (project.getName() == null || project.getName().trim().isEmpty()) {
+            throw new RuntimeException("项目名称不能为空");
+        }
+        if (project.getStatus() == null) {
+            throw new RuntimeException("项目状态不能为空");
+        }
+        // if (project.getCover() == null || project.getCover().trim().isEmpty()) {
+        // throw new RuntimeException("项目封面不能为空");
+        // }
+
+        // 自动填充当前时间戳
+        project.setCreateTime(LocalDateTime.now());
+        return super.save(project);
     }
 }

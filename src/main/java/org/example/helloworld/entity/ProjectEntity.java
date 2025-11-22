@@ -1,11 +1,12 @@
 package org.example.helloworld.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import java.time.LocalDateTime;
 
 @Data
 @TableName("project")
@@ -18,12 +19,14 @@ public class ProjectEntity {
     private String name;
 
     /** 项目状态 */
-    private Integer status;
+    private String status;
 
     /** 项目封面 */
     private String cover;
 
     /** 创建时间 */
-    private Date createTime;
+    @TableField("create_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime createTime;
 
 }

@@ -12,6 +12,8 @@ import org.example.helloworld.service.ProjectService;
 import org.example.helloworld.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,5 +40,22 @@ public class ProjectController {
         .data("total", projectPage.getTotal())
         .data("pages", projectPage.getPages())
         .data("records", projectPage.getRecords());
+  }
+
+  /**
+   * 创建项目
+   * 
+   * @param project 项目信息
+   * @return 创建结果
+   */
+  @Operation(summary = "创建项目", description = "创建新项目")
+  @PostMapping("")
+  public Result save(@RequestBody ProjectEntity project) {
+    boolean success = projectService.createProject(project);
+    if (success) {
+      return Result.ok().message("插入成功").data("id", project.getId());
+    } else {
+      return Result.error().message("插入失败");
+    }
   }
 }
