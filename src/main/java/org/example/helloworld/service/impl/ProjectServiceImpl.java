@@ -61,6 +61,16 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
      * 更新项目（只更新传入的字段）
      * 使用 LambdaUpdateWrapper 实现精确更新，避免覆盖未传入的字段
      * 
+     * 更新逻辑：
+     * 1. null = 不更新（字段未传）
+     * 2. "" = 清空为空字符串（仅对可选字段如 cover）
+     * 3. 有值 = 更新为该值
+     * 
+     * 字段保护：
+     * - name: 必填字段，不允许清空
+     * - status: 必填字段，不允许清空
+     * - cover: 可选字段，允许清空
+     * 
      * @param id  项目 ID
      * @param dto 更新项目 DTO
      * @return 是否更新成功
@@ -73,26 +83,37 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
             throw new ResourceNotFoundException("项目", "ID", id);
         }
 
-        // 使用 LambdaUpdateWrapper 只更新非空字段
+        // 验证必填字段不能清空
+        dto.validateRequiredFields();
+
+        // 使用 LambdaUpdateWrapper 只更新已设置的字段
         LambdaUpdateWrapper<ProjectEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(ProjectEntity::getId, id);
 
-        // 只设置传入的字段
         boolean hasUpdate = false;
 
-        if (dto.getName() != null && !dto.getName().trim().isEmpty()) {
-            updateWrapper.set(ProjectEntity::getName, dto.getName());
+        // 1. 更新 name（必填字段，只有传入且非空时才更新）
+        if (dto.isNameSet() && dto.getName() != null && !dto.getName().trim().isEmpty()) {
+            updateWrapper.set(ProjectEntity::getName, dto.getName().trim());
             hasUpdate = true;
         }
 
-        if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
-            updateWrapper.set(ProjectEntity::getStatus, dto.getStatus());
+        // 2. 更新 status（必填字段，只有传入且非空时才更新）
+        if (dto.isStatusSet() && dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
+            updateWrapper.set(ProjectEntity::getStatus, dto.getStatus().trim());
             hasUpdate = true;
         }
 
-        if (dto.getCover() != null) {
-            // 允许设置为空字符串来清除封面
-            updateWrapper.set(ProjectEntity::getCover, dto.getCover());
+        // 3. 更新 cover（可选字段，允许清空）
+        if (dto.isCoverSet()) {
+            // 传入了 cover 字段
+            if (dto.getCover() == null || dto.getCover().isEmpty()) {
+                // null 或 "" 都表示清空
+                updateWrapper.set(ProjectEntity::getCover, null);
+            } else {
+                // 更新为新值
+                updateWrapper.set(ProjectEntity::getCover, dto.getCover().trim());
+            }
             hasUpdate = true;
         }
 
