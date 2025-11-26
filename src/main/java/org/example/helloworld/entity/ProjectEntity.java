@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -25,7 +25,7 @@ public class ProjectEntity {
     private String cover;
 
     /** 创建时间 */
-    @TableField("create_time")
+    @TableField(value = "create_time", update = "false") // 更新时不修改此字段
     private LocalDateTime createTime;
 
 }
