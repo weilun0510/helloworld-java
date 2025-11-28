@@ -60,7 +60,7 @@ public class OrderController {
     if (order != null) {
       return Result.ok().data("order", order);
     } else {
-      return Result.error().message("订单不存在");
+      return Result.error(404).message("订单不存在");
     }
   }
 }

@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.helloworld.dto.CreateProjectDTO;
 import org.example.helloworld.dto.UpdateProjectDTO;
 import org.example.helloworld.entity.ProjectEntity;
-import org.example.helloworld.exception.BusinessException;
-import org.example.helloworld.exception.ResourceNotFoundException;
 import org.example.helloworld.mapper.ProjectMapper;
 import org.example.helloworld.service.ProjectService;
 import org.springframework.stereotype.Service;
@@ -51,7 +49,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
         // 保存到数据库
         boolean success = super.save(project);
         if (!success) {
-            throw new BusinessException("创建项目失败");
+            // 如果保存失败，抛出运行时异常，由全局异常处理器返回 HTTP 500
+            throw new RuntimeException("创建项目失败");
         }
 
         return project;
@@ -80,7 +79,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
         // 检查项目是否存在
         ProjectEntity existingProject = baseMapper.selectById(id);
         if (existingProject == null) {
-            throw new ResourceNotFoundException("项目", "ID", id);
+            // 项目不存在，返回 false
+            return false;
         }
 
         // 验证必填字段不能清空

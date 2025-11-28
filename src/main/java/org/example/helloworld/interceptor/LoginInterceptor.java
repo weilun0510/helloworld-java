@@ -79,8 +79,7 @@ public class LoginInterceptor implements HandlerInterceptor {
         response.setStatus(HttpServletResponse.SC_OK); // 401
         response.setContentType("application/json;charset=UTF-8");
 
-        Result result = Result.error()
-                .code(401)
+        Result result = Result.error(401)
                 .message(message);
 
         ObjectMapper objectMapper = new ObjectMapper();

@@ -21,20 +21,20 @@ public interface UserService extends IService<UserEntity> {
   String login(String username, String password);
 
   /**
-   * 根据用户名查询用户（不返回敏感信息）
-   * 
-   * @param username 用户名
-   * @return 用户实体
-   */
-  UserEntity getUserByUsername(String username);
-
-  /**
    * 获取用户信息（包含默认头像等业务逻辑）
    * 
    * @param username 用户名
    * @return 用户信息
    */
   UserEntity getUserInfo(String username);
+
+  /**
+   * 根据用户名查询用户（不返回敏感信息）
+   * 
+   * @param username 用户名
+   * @return 用户实体
+   */
+  UserEntity getUserByUsername(String username);
 
   /**
    * 条件查询用户（按用户名）

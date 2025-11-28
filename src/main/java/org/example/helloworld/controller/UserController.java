@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.validation.Valid;
+import org.example.helloworld.dto.LoginDTO;
+import org.example.helloworld.dto.RegisterDTO;
 import org.example.helloworld.entity.UserEntity;
 import org.example.helloworld.service.UserService;
 import org.example.helloworld.utils.Result;
@@ -28,20 +31,20 @@ public class UserController {
     /**
      * 用户登录
      * 
-     * @param user 用户登录信息（用户名和密码）
+     * @param loginDTO 登录请求 DTO（自动进行参数验证）
      * @return 返回 token 和用户信息
      */
     @Operation(summary = "用户登录", description = "使用用户名和密码登录，返回JWT Token")
     @PostMapping("/login")
-    public Result login(@RequestBody UserEntity user) {
-        // 调用 service 层进行登录校验
-        String token = userService.login(user.getUsername(), user.getPassword());
+    public Result login(@Valid @RequestBody LoginDTO loginDTO) {
+        // 调用 service 层进行登录校验（参数验证已在 Controller 层完成）
+        String token = userService.login(loginDTO.getUsername(), loginDTO.getPassword());
 
         // 登录成功，返回 token
         return Result.ok()
                 .message("登录成功")
                 .data("token", token)
-                .data("username", user.getUsername());
+                .data("username", loginDTO.getUsername());
     }
 
     /**
@@ -58,13 +61,13 @@ public class UserController {
         Integer userId = (Integer) request.getAttribute("userId");
 
         if (userId == null) {
-            return Result.error().message("获取用户信息失败");
+            return Result.error(500).message("获取用户信息失败");
         }
 
         // 根据用户ID查询用户信息
         UserEntity user = userService.getById(userId);
         if (user == null) {
-            return Result.error().message("用户不存在");
+            return Result.error(404).message("用户不存在");
         }
 
         // 设置默认头像（业务逻辑）
@@ -83,17 +86,23 @@ public class UserController {
     /**
      * 用户注册
      * 
-     * @param user 用户注册信息
+     * @param registerDTO 注册请求 DTO（自动进行参数验证）
      * @return 注册结果
      */
     @Operation(summary = "用户注册", description = "注册新用户账号")
     @PostMapping("/register")
-    public Result register(@RequestBody UserEntity user) {
+    public Result register(@Valid @RequestBody RegisterDTO registerDTO) {
+        // 转换为 UserEntity
+        UserEntity user = new UserEntity();
+        user.setUsername(registerDTO.getUsername());
+        user.setPassword(registerDTO.getPassword());
+
+        // 调用 service 层进行注册（参数验证已在 Controller 层完成）
         boolean success = userService.register(user);
         if (success) {
             return Result.ok().message("注册成功");
         } else {
-            return Result.error().message("注册失败");
+            return Result.error(500).message("注册失败");
         }
     }
 
@@ -126,7 +135,7 @@ public class UserController {
                     .message("插入成功")
                     .data("id", user.getId());
         } else {
-            return Result.error().message("插入失败");
+            return Result.error(500).message("插入失败");
         }
     }
 
@@ -144,7 +153,7 @@ public class UserController {
             user.setPassword(null);
             return Result.ok().data("user", user);
         } else {
-            return Result.error().message("用户不存在");
+            return Result.error(404).message("用户不存在");
         }
     }
 
@@ -160,7 +169,7 @@ public class UserController {
         if (success) {
             return Result.ok().message("删除成功");
         } else {
-            return Result.error().message("删除失败");
+            return Result.error(500).message("删除失败");
         }
     }
 
@@ -178,7 +187,7 @@ public class UserController {
         if (success) {
             return Result.ok().message("更新成功");
         } else {
-            return Result.error().message("更新失败");
+            return Result.error(500).message("更新失败");
         }
     }
 

@@ -3,8 +3,10 @@ package org.example.helloworld.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.helloworld.entity.UserEntity;
+import org.example.helloworld.exception.BusinessException;
 import org.example.helloworld.mapper.UserMapper;
 import org.example.helloworld.service.UserService;
+import org.example.helloworld.utils.BusinessCode;
 import org.example.helloworld.utils.JwtUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -22,34 +24,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
   /**
    * 用户登录
    * 
-   * @param username 用户名
-   * @param password 密码
+   * @param username 用户名（已在 Controller 层验证，这里作为防御性检查）
+   * @param password 密码（已在 Controller 层验证，这里作为防御性检查）
    * @return 登录成功返回 token，失败抛出异常
    */
   @Override
   public String login(String username, String password) {
-    // 参数校验
-    if (username == null || username.trim().isEmpty()) {
-      throw new RuntimeException("用户名不能为空");
-    }
-    if (password == null || password.trim().isEmpty()) {
-      throw new RuntimeException("密码不能为空");
-    }
-
     // 查询用户（使用 baseMapper 或 this.getOne()）
     QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("username", username);
     UserEntity user = this.getOne(queryWrapper);
 
-    // 用户不存在
+    // 验证用户
     if (user == null) {
-      throw new RuntimeException("用户名或密码错误");
+      // 不暴露用户是否存在，避免用户枚举攻击
+      throw new BusinessException(BusinessCode.LOGIN_FAILED);
     }
 
     // 验证密码（这里简单比较，实际项目中应该使用加密后的密码比较）
     // 如果数据库存储的是加密密码，需要将输入的密码加密后再比较
     if (!password.equals(user.getPassword())) {
-      throw new RuntimeException("用户名或密码错误");
+      throw new BusinessException(BusinessCode.LOGIN_FAILED);
     }
 
     // 生成 token（subject 存储用户ID，username 作为附加信息）
@@ -66,19 +61,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
   @Override
   public UserEntity getUserByUsername(String username) {
     if (username == null || username.trim().isEmpty()) {
-      throw new RuntimeException("用户名不能为空");
+      throw new IllegalArgumentException("用户名不能为空");
     }
 
     QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("username", username);
     UserEntity user = this.getOne(queryWrapper);
 
-    if (user == null) {
-      throw new RuntimeException("用户不存在");
+    if (user != null) {
+      // 不返回密码字段
+      user.setPassword(null);
     }
-
-    // 不返回密码字段
-    user.setPassword(null);
     return user;
   }
 
@@ -140,13 +133,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
   @Override
   public Integer getUserIdFromToken(String token) {
     if (token == null || token.trim().isEmpty()) {
-      throw new RuntimeException("Token 不能为空");
+      throw new IllegalArgumentException("Token 不能为空");
     }
 
     try {
       return JwtUtil.getUserIdFromToken(token);
     } catch (Exception e) {
-      throw new RuntimeException("Token 无效或已过期");
+      throw new IllegalArgumentException("Token 无效或已过期: " + e.getMessage());
     }
   }
 
@@ -159,41 +152,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
   @Override
   public String getUsernameFromToken(String token) {
     if (token == null || token.trim().isEmpty()) {
-      throw new RuntimeException("Token 不能为空");
+      throw new IllegalArgumentException("Token 不能为空");
     }
 
     try {
       return JwtUtil.getUsernameFromToken(token);
     } catch (Exception e) {
-      throw new RuntimeException("Token 无效或已过期");
+      throw new IllegalArgumentException("Token 无效或已过期: " + e.getMessage());
     }
   }
 
   /**
    * 用户注册
    * 
-   * @param user 用户实体
+   * @param user 用户实体（已在 Controller 层验证基本参数，这里作为防御性检查）
    * @return 注册成功返回 true，失败返回 false
    */
   @Override
   public boolean register(UserEntity user) {
-    // 参数校验
+    // 防御性参数校验（Controller 层已使用 @Valid 验证，这里作为额外保护）
     if (user == null) {
-      throw new RuntimeException("用户信息不能为空");
+      throw new IllegalArgumentException("用户信息不能为空");
     }
     if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-      throw new RuntimeException("用户名不能为空");
+      throw new IllegalArgumentException("用户名不能为空");
     }
     if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-      throw new RuntimeException("密码不能为空");
+      throw new IllegalArgumentException("密码不能为空");
     }
 
-    // 检查用户名是否已存在
+    // 检查用户名是否已存在（业务逻辑错误，使用 BusinessException）
     QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("username", user.getUsername());
     long count = this.count(queryWrapper);
     if (count > 0) {
-      throw new RuntimeException("用户名已存在");
+      throw new BusinessException(BusinessCode.USERNAME_ALREADY_EXISTS);
     }
 
     // 密码加密（可选，实际项目中建议使用 BCrypt 等加密方式）
