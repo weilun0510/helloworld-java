@@ -126,14 +126,16 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
      * 使用 LambdaUpdateWrapper 实现精确更新，避免覆盖未传入的字段
      * 
      * 更新逻辑：
-     * 1. null = 不更新（字段未传）
-     * 2. "" = 清空为空字符串（仅对可选字段如 cover）
-     * 3. 有值 = 更新为该值
+     * 1. name/status: 必填字段，如果传入必须非空
+     * 2. cover: 可选字段
+     * - 如果未传（coverSet = false）：不更新 cover，保持原值
+     * - 如果传了空字符串 ""（coverSet = true && cover 为空）：清空 cover
+     * - 如果传了值（coverSet = true && cover 有值）：更新 cover
      * 
      * 字段保护：
      * - name: 必填字段，不允许清空
      * - status: 必填字段，不允许清空
-     * - cover: 可选字段，允许清空
+     * - cover: 可选字段，允许清空；如果未传则不更新
      * 
      * @param id  项目 ID
      * @param dto 更新项目 DTO
@@ -150,11 +152,29 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
 
         // 使用 LambdaUpdateWrapper 只更新已设置的字段
         LambdaUpdateWrapper<ProjectEntity> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(ProjectEntity::getId, id)
-                .set(ProjectEntity::getName, dto.getName().trim())
-                .set(ProjectEntity::getStatus, dto.getStatus().trim())
-                .set(ProjectEntity::getCover,
-                        dto.getCover() == null || dto.getCover().isEmpty() ? null : dto.getCover().trim());
+        updateWrapper.eq(ProjectEntity::getId, id);
+
+        // 更新 name（必填字段，验证已通过，直接更新）
+        updateWrapper.set(ProjectEntity::getName, dto.getName().trim());
+
+        // 更新 status（必填字段，验证已通过，直接更新）
+        updateWrapper.set(ProjectEntity::getStatus, dto.getStatus().trim());
+
+        // 更新 cover（可选字段）
+        if (dto.isCoverSet()) {
+            // cover 字段在 JSON 中存在（可能是 null、空字符串或有效值）
+            if (dto.getCover() == null) {
+                // 传了 null：不更新 cover，保持原值
+                // 注意：在 JSON 中，字段不存在和 null 等价，都表示"不更新"
+            } else if (dto.getCover().trim().isEmpty()) {
+                // 传了空字符串 ""：清空 cover
+                updateWrapper.set(ProjectEntity::getCover, null);
+            } else {
+                // 传了有效值：更新 cover
+                updateWrapper.set(ProjectEntity::getCover, dto.getCover().trim());
+            }
+        }
+        // 如果 coverSet = false（字段不存在），不更新 cover，保持原值
 
         // 执行更新
         return this.update(updateWrapper);

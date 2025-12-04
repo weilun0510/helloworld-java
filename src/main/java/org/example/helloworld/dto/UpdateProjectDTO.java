@@ -1,10 +1,7 @@
 package org.example.helloworld.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -18,7 +15,7 @@ import lombok.Data;
  * 字段保护：
  * - name: 必填字段，不能清空，如果传入必须非空
  * - status: 必填字段，不能清空，如果传入必须非空
- * - cover: 可选字段，允许清空
+ * - cover: 可选字段，允许清空；如果未传则不更新，传空字符串则清空
  */
 @Data
 @Schema(description = "更新项目请求")
@@ -42,59 +39,47 @@ public class UpdateProjectDTO {
 
     /**
      * 项目封面（可选更新）
-     * 可以传入空字符串来清空封面
+     * 
+     * 更新规则：
+     * - 如果字段不存在（未传）：不更新 cover，保持原值
+     * - 如果传了 null：不更新 cover，保持原值（JSON 中字段不存在和 null 等价）
+     * - 如果传了空字符串 ""：清空 cover（设置为 null）
+     * - 如果传了值：更新 cover 为该值
+     * 
+     * 注意：在 JSON 中，字段不存在和字段值为 null 无法区分，都会被当作"不更新"处理。
+     * 如果需要清空 cover，请传空字符串 ""，而不是 null。
      */
-    @Schema(description = "项目封面URL，传空字符串可清空", example = "https://example.com/new-cover.jpg")
+    @Schema(description = "项目封面URL。不传或传null则不更新，传空字符串\"\"可清空，传值则更新", example = "https://example.com/new-cover.jpg")
     private String cover;
 
-    // /**
-    // * 检查字段是否被设置（即使是 null）
-    // * 用于区分"未传字段"和"传了 null"
-    // */
-    // private transient boolean nameSet = false;
-    // private transient boolean statusSet = false;
-    // private transient boolean coverSet = false;
+    /**
+     * 标记 cover 字段是否被设置（用于区分"未传字段"和"传了值"）
+     * 使用 transient 避免序列化
+     */
+    private transient boolean coverSet = false;
 
-    // // Setter 方法，用于标记字段已设置
-    // public void setName(String name) {
-    // this.name = name;
-    // this.nameSet = true;
-    // }
+    /**
+     * 自定义 setter，用于标记 cover 字段是否被设置
+     * 
+     * 注意：在 JSON 反序列化时：
+     * - 如果字段不存在：不会调用此 setter，coverSet 保持 false
+     * - 如果字段值为 null：会调用 setCover(null)，coverSet 会被设置为 true
+     * - 如果字段值为空字符串 ""：会调用 setCover("")，coverSet 会被设置为 true
+     * - 如果字段有值：会调用 setCover(value)，coverSet 会被设置为 true
+     * 
+     * @param cover 封面URL
+     */
+    public void setCover(String cover) {
+        this.cover = cover;
+        this.coverSet = true; // 标记字段已被设置（包括 null、空字符串和有效值）
+    }
 
-    // public void setStatus(String status) {
-    // this.status = status;
-    // this.statusSet = true;
-    // }
-
-    // public void setCover(String cover) {
-    // this.cover = cover;
-    // this.coverSet = true;
-    // }
-
-    // // 判断字段是否被设置
-    // public boolean isNameSet() {
-    // return nameSet;
-    // }
-
-    // public boolean isStatusSet() {
-    // return statusSet;
-    // }
-
-    // public boolean isCoverSet() {
-    // return coverSet;
-    // }
-
-    // /**
-    // * 检查必填字段是否尝试清空
-    // *
-    // * @throws IllegalArgumentException 如果尝试清空必填字段
-    // */
-    // public void validateRequiredFields() {
-    // if (nameSet && (name == null || name.trim().isEmpty())) {
-    // throw new IllegalArgumentException("项目名称不能为空");
-    // }
-    // if (statusSet && (status == null || status.trim().isEmpty())) {
-    // throw new IllegalArgumentException("项目状态不能为空");
-    // }
-    // }
+    /**
+     * 判断 cover 字段是否被设置
+     * 
+     * @return true 如果 cover 字段在 JSON 中存在（包括 null、空字符串和有效值），false 如果字段不存在
+     */
+    public boolean isCoverSet() {
+        return coverSet;
+    }
 }
