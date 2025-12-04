@@ -5,16 +5,20 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.example.helloworld.dto.CreateProjectDTO;
+import org.example.helloworld.dto.ProjectListDTO;
 import org.example.helloworld.dto.ProjectResponseDTO;
 import org.example.helloworld.dto.UpdateProjectDTO;
 import org.example.helloworld.entity.ProjectEntity;
 import org.example.helloworld.service.ProjectService;
 import org.example.helloworld.utils.Result;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,7 +30,7 @@ import java.util.stream.Collectors;
  * 架构说明：
  * 1. 使用 DTO 模式：分离请求参数和实体类
  * 2. 使用 ResponseDTO：统一响应格式，可隐藏敏感字段
- * 3. 参数验证：使用 @Valid 和 Bean Validation 进行参数校验
+ * 3. 参数验证：使用 @Validated 和 Bean Validation 进行参数校验
  * 4. 精确更新：使用 UpdateDTO 只更新传入的字段，避免覆盖其他字段
  * 5. 全局异常处理：使用 GlobalExceptionHandler 统一处理异常
  * 6. RESTful 风格：遵循 REST API 设计规范
@@ -40,20 +44,24 @@ public class ProjectController {
   private ProjectService projectService;
 
   /**
-   * 查询所有项目（分页）
+   * 查询项目列表（支持多条件查询和分页）
    * 
-   * @param page     页码，默认第 1 页
-   * @param pageSize 每页数量，默认 10 条
+   * 支持的查询参数：
+   * - name: 项目名称（模糊查询）
+   * - status: 项目状态（精确查询）
+   * - pageNum: 页码
+   * - pageSize: 每页数量
+   * - sortField: 排序字段（id, name, status, create_time）
+   * - sortOrder: 排序方向（asc, desc）
+   * 
+   * @param dto 查询条件 DTO
    * @return 项目列表
    */
-  @Operation(summary = "查询所有项目", description = "分页查询所有项目列表")
+  @Operation(summary = "查询项目列表", description = "支持多条件查询：按名称、状态查询，支持分页和排序")
   @GetMapping
-  public Result findAll(
-      @Parameter(description = "页码", example = "1") @RequestParam(value = "page", defaultValue = "1") int page,
-      @Parameter(description = "每页数量", example = "10") @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
-
-    Page<ProjectEntity> pageParam = new Page<>(page, pageSize);
-    IPage<ProjectEntity> projectPage = projectService.page(pageParam);
+  public Result projectList(@Validated @ParameterObject ProjectListDTO dto) {
+    // 调用 Service 层查询
+    IPage<ProjectEntity> projectPage = projectService.projectList(dto);
 
     // 转换为 ResponseDTO
     List<ProjectResponseDTO> records = projectPage.getRecords().stream()
@@ -63,6 +71,8 @@ public class ProjectController {
     return Result.ok()
         .data("total", projectPage.getTotal())
         .data("pages", projectPage.getPages())
+        .data("current", projectPage.getCurrent())
+        .data("size", projectPage.getSize())
         .data("records", records);
   }
 
@@ -75,7 +85,7 @@ public class ProjectController {
   @Operation(summary = "查询项目详情", description = "根据项目 ID 查询项目详细信息")
   @GetMapping("/{id}")
   public Result getById(
-      @Parameter(description = "项目ID", required = true) @PathVariable Integer id) {
+      @Parameter(description = "项目ID", required = true) @PathVariable @NotNull(message = "项目ID不能为空") @Positive(message = "项目ID必须为正整数") Integer id) {
 
     ProjectEntity project = projectService.getById(id);
     if (project == null) {
@@ -121,7 +131,8 @@ public class ProjectController {
   @Operation(summary = "更新项目（部分更新）", description = "只更新传入的字段，未传入的字段保持不变。推荐使用此接口而不是 PUT。")
   @PatchMapping("/{id}")
   public Result update(
-      @Parameter(description = "项目ID", required = true) @PathVariable Integer id,
+      @Parameter(description = "项目ID", required = true) @PathVariable @NotNull(message = "项目ID不能为空") @Positive(message = "项目ID必须为正整数") Integer id,
+
       @Valid @RequestBody UpdateProjectDTO dto) {
 
     // Service 层会处理业务逻辑
@@ -148,7 +159,7 @@ public class ProjectController {
   @Operation(summary = "删除项目", description = "根据项目 ID 删除项目")
   @DeleteMapping("/{id}")
   public Result delete(
-      @Parameter(description = "项目ID", required = true) @PathVariable Integer id) {
+      @Parameter(description = "项目ID", required = true) @PathVariable @NotNull(message = "项目ID不能为空") @Positive(message = "项目ID必须为正整数") Integer id) {
 
     // 检查项目是否存在
     ProjectEntity project = projectService.getById(id);

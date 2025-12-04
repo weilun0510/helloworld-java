@@ -1,8 +1,12 @@
 package org.example.helloworld.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.helloworld.dto.CreateProjectDTO;
+import org.example.helloworld.dto.ProjectListDTO;
 import org.example.helloworld.dto.UpdateProjectDTO;
 import org.example.helloworld.entity.ProjectEntity;
 import org.example.helloworld.mapper.ProjectMapper;
@@ -10,7 +14,6 @@ import org.example.helloworld.service.ProjectService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 项目服务实现类
@@ -21,13 +24,75 @@ import java.util.List;
 public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity> implements ProjectService {
 
     /**
-     * 查询所有项目
+     * 查询项目（支持多条件查询和分页）
      * 
-     * @return 项目列表
+     * 支持的查询条件：
+     * - id: 精确查询
+     * - name: 模糊查询
+     * - status: 精确查询（核心功能）
+     * 
+     * 支持排序和分页
+     * 
+     * @param dto 查询条件 DTO，如果为 null 则查询所有
+     * @return 分页结果
      */
     @Override
-    public List<ProjectEntity> getAllProjects() {
-        return baseMapper.selectList(null);
+    public IPage<ProjectEntity> projectList(ProjectListDTO dto) {
+        // 构建查询条件
+        LambdaQueryWrapper<ProjectEntity> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 如果 dto 不为 null，添加查询条件
+        if (dto != null) {
+            // 1. ID 精确查询
+
+            // 2. 项目名称模糊查询
+            if (dto.getName() != null && !dto.getName().trim().isEmpty()) {
+                queryWrapper.like(ProjectEntity::getName, dto.getName().trim());
+            }
+
+            // 3. 项目状态精确查询（核心功能）
+            if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
+                queryWrapper.eq(ProjectEntity::getStatus, dto.getStatus().trim());
+            }
+
+            // 4. 排序
+            if (dto.getSortField() != null && !dto.getSortField().trim().isEmpty()) {
+                String sortField = dto.getSortField().trim();
+                boolean isAsc = "asc".equalsIgnoreCase(dto.getSortOrder());
+
+                // 根据字段名排序（使用数据库字段名）
+                switch (sortField) {
+                    case "id":
+                        queryWrapper.orderBy(true, isAsc, ProjectEntity::getId);
+                        break;
+                    case "name":
+                        queryWrapper.orderBy(true, isAsc, ProjectEntity::getName);
+                        break;
+                    case "status":
+                        queryWrapper.orderBy(true, isAsc, ProjectEntity::getStatus);
+                        break;
+                    case "create_time":
+                        queryWrapper.orderBy(true, isAsc, ProjectEntity::getCreateTime);
+                        break;
+                    default:
+                        // 默认按创建时间降序
+                        queryWrapper.orderByDesc(ProjectEntity::getCreateTime);
+                }
+            } else {
+                // 未指定排序字段，默认按创建时间降序
+                queryWrapper.orderByDesc(ProjectEntity::getCreateTime);
+            }
+        } else {
+            // dto 为 null，默认按创建时间降序
+            queryWrapper.orderByDesc(ProjectEntity::getCreateTime);
+        }
+
+        // 5. 分页查询
+        int pageNum = (dto != null && dto.getPageNum() != null) ? dto.getPageNum() : 1;
+        int pageSize = (dto != null && dto.getPageSize() != null) ? dto.getPageSize() : 10;
+        Page<ProjectEntity> page = new Page<>(pageNum, pageSize);
+
+        return baseMapper.selectPage(page, queryWrapper);
     }
 
     /**
