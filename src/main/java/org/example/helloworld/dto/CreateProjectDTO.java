@@ -32,4 +32,3 @@ public class CreateProjectDTO {
     @Schema(description = "项目封面URL", example = "https://example.com/cover.jpg")
     private String cover;
 }
-

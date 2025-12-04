@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
@@ -131,7 +135,55 @@ public class GlobalExceptionHandler {
         @ResponseStatus(HttpStatus.BAD_REQUEST)
         public Result handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
                 String message = e.getMessage();
-                // 提取更友好的错误信息
+                Throwable cause = e.getCause();
+
+                // 处理 Jackson 类型不匹配异常（格式转换失败，如 Number -> String）
+                if (cause instanceof InvalidFormatException) {
+                        InvalidFormatException ife = (InvalidFormatException) cause;
+                        String fieldName = extractFieldName(ife.getPath());
+                        String targetType = ife.getTargetType() != null ? getTypeName(ife.getTargetType()) : "未知类型";
+
+                        return Result.error(HttpStatus.BAD_REQUEST.value())
+                                        .message(String.format(
+                                                        "参数类型错误: 字段 '%s' 期望类型为 %s，但实际类型不匹配",
+                                                        fieldName, targetType));
+                }
+
+                // 处理 Jackson 输入不匹配异常（类型不匹配，如 Number -> String）
+                if (cause instanceof MismatchedInputException) {
+                        MismatchedInputException mie = (MismatchedInputException) cause;
+                        String fieldName = extractFieldName(mie.getPath());
+                        String targetType = mie.getTargetType() != null ? getTypeName(mie.getTargetType()) : "未知类型";
+
+                        // 尝试从错误消息中提取实际类型
+                        String actualType = extractActualTypeFromMessage(message);
+                        String friendlyMessage = String.format("参数类型错误: 字段 '%s' 期望类型为 %s", fieldName, targetType);
+
+                        if (actualType != null) {
+                                friendlyMessage += String.format("，但实际传入的是 %s 类型", actualType);
+                        } else {
+                                friendlyMessage += "，但实际类型不匹配";
+                        }
+
+                        // 如果期望 String 类型，给出提示
+                        if ("String".equals(targetType)) {
+                                friendlyMessage += "。请使用字符串格式，例如 \"值\"";
+                        }
+
+                        return Result.error(HttpStatus.BAD_REQUEST.value())
+                                        .message(friendlyMessage);
+                }
+
+                // 处理 Jackson 值实例化异常
+                if (cause instanceof ValueInstantiationException) {
+                        ValueInstantiationException vie = (ValueInstantiationException) cause;
+                        String fieldName = extractFieldName(vie.getPath());
+
+                        return Result.error(HttpStatus.BAD_REQUEST.value())
+                                        .message(String.format("参数值错误: 字段 '%s' 的值无效", fieldName));
+                }
+
+                // 处理其他 JSON 解析错误
                 if (message != null && message.contains("JSON parse error")) {
                         return Result.error(HttpStatus.BAD_REQUEST.value())
                                         .message("请求参数格式错误: JSON 解析失败，请检查字段类型和格式");
@@ -139,9 +191,140 @@ public class GlobalExceptionHandler {
                         return Result.error(HttpStatus.BAD_REQUEST.value())
                                         .message("请求参数错误: 缺少请求体");
                 } else {
+                        // 尝试从原始消息中提取有用信息
+                        String friendlyMessage = extractFriendlyMessage(message);
                         return Result.error(HttpStatus.BAD_REQUEST.value())
-                                        .message("请求参数格式错误: " + (message != null ? message : "未知错误"));
+                                        .message("请求参数格式错误: " + friendlyMessage);
                 }
+        }
+
+        /**
+         * 从 Jackson 路径中提取字段名
+         * 
+         * @param path Jackson 路径列表
+         * @return 字段名
+         */
+        private String extractFieldName(
+                        java.util.List<com.fasterxml.jackson.databind.JsonMappingException.Reference> path) {
+                if (path == null || path.isEmpty()) {
+                        return "未知字段";
+                }
+
+                // 获取路径中的最后一个字段名
+                return path.stream()
+                                .map(ref -> ref.getFieldName())
+                                .filter(name -> name != null)
+                                .reduce((first, second) -> second) // 获取最后一个字段名
+                                .orElse("未知字段");
+        }
+
+        /**
+         * 获取类型的友好名称
+         * 
+         * @param type 类型
+         * @return 类型名称
+         */
+        private String getTypeName(Class<?> type) {
+                if (type == null) {
+                        return "未知类型";
+                }
+
+                // 基本类型映射
+                if (type == String.class) {
+                        return "String（字符串）";
+                } else if (type == Integer.class || type == int.class) {
+                        return "Integer（整数）";
+                } else if (type == Long.class || type == long.class) {
+                        return "Long（长整数）";
+                } else if (type == Double.class || type == double.class) {
+                        return "Double（浮点数）";
+                } else if (type == Boolean.class || type == boolean.class) {
+                        return "Boolean（布尔值）";
+                }
+
+                return type.getSimpleName();
+        }
+
+        /**
+         * 获取实际值的类型名称
+         * 
+         * @param value 实际值
+         * @return 类型名称
+         */
+        private String getActualTypeName(Object value) {
+                if (value == null) {
+                        return "null";
+                }
+
+                Class<?> valueClass = value.getClass();
+                if (value instanceof Number) {
+                        if (value instanceof Integer) {
+                                return "Integer（整数）";
+                        } else if (value instanceof Long) {
+                                return "Long（长整数）";
+                        } else if (value instanceof Double || value instanceof Float) {
+                                return "Double（浮点数）";
+                        }
+                        return "Number（数字）";
+                } else if (value instanceof String) {
+                        return "String（字符串）";
+                } else if (value instanceof Boolean) {
+                        return "Boolean（布尔值）";
+                }
+
+                return valueClass.getSimpleName();
+        }
+
+        /**
+         * 从错误消息中提取实际类型信息
+         * 
+         * @param message 错误消息
+         * @return 实际类型名称，如果无法提取则返回 null
+         */
+        private String extractActualTypeFromMessage(String message) {
+                if (message == null) {
+                        return null;
+                }
+
+                // 匹配 "from Number input" 或 "from Integer input" 等
+                if (message.contains("from Number input") || message.contains("from Integer input")) {
+                        return "Integer（整数）";
+                } else if (message.contains("from Long input")) {
+                        return "Long（长整数）";
+                } else if (message.contains("from Double input") || message.contains("from Float input")) {
+                        return "Double（浮点数）";
+                } else if (message.contains("from Boolean input")) {
+                        return "Boolean（布尔值）";
+                } else if (message.contains("from String input")) {
+                        return "String（字符串）";
+                }
+
+                return null;
+        }
+
+        /**
+         * 从错误消息中提取友好的错误信息
+         * 
+         * @param message 原始错误消息
+         * @return 友好的错误消息
+         */
+        private String extractFriendlyMessage(String message) {
+                if (message == null) {
+                        return "未知错误";
+                }
+
+                // 提取字段名和类型信息
+                if (message.contains("Cannot deserialize value of type")) {
+                        // 格式: Cannot deserialize value of type `java.lang.String` from Number input
+                        return "字段类型不匹配，请检查字段类型是否正确";
+                }
+
+                if (message.contains("Unexpected token")) {
+                        return "JSON 格式错误，请检查 JSON 语法";
+                }
+
+                // 返回原始消息（截取前200个字符避免过长）
+                return message.length() > 200 ? message.substring(0, 200) + "..." : message;
         }
 
         /**
@@ -176,7 +359,7 @@ public class GlobalExceptionHandler {
                 String actualValue = e.getValue() != null ? e.getValue().toString() : "null";
 
                 return Result.error(HttpStatus.BAD_REQUEST.value())
-                                .message(String.format("参数类型错误: 参数 '%s' 期望类型为 %s，但实际值为 '%s'",
+                                .message(String.format("参数类型错误3: 参数 '%s' 期望类型为 %s，但实际值为 '%s'",
                                                 parameterName, requiredType, actualValue));
         }
 

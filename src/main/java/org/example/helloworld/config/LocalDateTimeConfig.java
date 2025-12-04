@@ -8,11 +8,23 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.format.DateTimeFormatter;
 
+/**
+ * LocalDateTime 配置类
+ * 
+ * 配置 LocalDateTime 的序列化和反序列化格式
+ */
 @Configuration
 public class LocalDateTimeConfig {
 
   private static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
+  /**
+   * 自定义 LocalDateTime 的序列化和反序列化格式
+   * 
+   * 注意：这个 Customizer 会在 JacksonConfig 之前应用
+   * 
+   * @return Jackson2ObjectMapperBuilderCustomizer
+   */
   @Bean
   public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
     return builder -> {
