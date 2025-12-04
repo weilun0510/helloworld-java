@@ -2,6 +2,8 @@ package org.example.helloworld.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,23 +22,22 @@ import lombok.Data;
  */
 @Data
 @Schema(description = "更新项目请求")
-@JsonInclude(JsonInclude.Include.NON_NULL) // 序列化时忽略 null 字段
 public class UpdateProjectDTO {
 
     /**
-     * 项目名称（可选更新）
+     * 项目名称
      * 如果传入，不能为空字符串（必填字段保护）
      */
-    @Schema(description = "项目名称", example = "电商平台项目V2")
-    @Size(min = 1, max = 100, message = "项目名称长度必须在1-100之间")
+    @Schema(description = "项目名称", example = "电商平台项目", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "项目名称不能为空")
     private String name;
 
     /**
-     * 项目状态（可选更新）
+     * 项目状态
      * 如果传入，不能为空字符串（必填字段保护）
      */
-    @Schema(description = "项目状态", example = "已完成")
-    @Size(min = 1, max = 50, message = "项目状态长度必须在1-50之间")
+    @Schema(description = "项目状态", example = "进行中", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "项目状态不能为空")
     private String status;
 
     /**
@@ -46,54 +47,54 @@ public class UpdateProjectDTO {
     @Schema(description = "项目封面URL，传空字符串可清空", example = "https://example.com/new-cover.jpg")
     private String cover;
 
-    /**
-     * 检查字段是否被设置（即使是 null）
-     * 用于区分"未传字段"和"传了 null"
-     */
-    private transient boolean nameSet = false;
-    private transient boolean statusSet = false;
-    private transient boolean coverSet = false;
+    // /**
+    // * 检查字段是否被设置（即使是 null）
+    // * 用于区分"未传字段"和"传了 null"
+    // */
+    // private transient boolean nameSet = false;
+    // private transient boolean statusSet = false;
+    // private transient boolean coverSet = false;
 
-    // Setter 方法，用于标记字段已设置
-    public void setName(String name) {
-        this.name = name;
-        this.nameSet = true;
-    }
+    // // Setter 方法，用于标记字段已设置
+    // public void setName(String name) {
+    // this.name = name;
+    // this.nameSet = true;
+    // }
 
-    public void setStatus(String status) {
-        this.status = status;
-        this.statusSet = true;
-    }
+    // public void setStatus(String status) {
+    // this.status = status;
+    // this.statusSet = true;
+    // }
 
-    public void setCover(String cover) {
-        this.cover = cover;
-        this.coverSet = true;
-    }
+    // public void setCover(String cover) {
+    // this.cover = cover;
+    // this.coverSet = true;
+    // }
 
-    // 判断字段是否被设置
-    public boolean isNameSet() {
-        return nameSet;
-    }
+    // // 判断字段是否被设置
+    // public boolean isNameSet() {
+    // return nameSet;
+    // }
 
-    public boolean isStatusSet() {
-        return statusSet;
-    }
+    // public boolean isStatusSet() {
+    // return statusSet;
+    // }
 
-    public boolean isCoverSet() {
-        return coverSet;
-    }
+    // public boolean isCoverSet() {
+    // return coverSet;
+    // }
 
-    /**
-     * 检查必填字段是否尝试清空
-     * 
-     * @throws IllegalArgumentException 如果尝试清空必填字段
-     */
-    public void validateRequiredFields() {
-        if (nameSet && (name == null || name.trim().isEmpty())) {
-            throw new IllegalArgumentException("项目名称不能为空");
-        }
-        if (statusSet && (status == null || status.trim().isEmpty())) {
-            throw new IllegalArgumentException("项目状态不能为空");
-        }
-    }
+    // /**
+    // * 检查必填字段是否尝试清空
+    // *
+    // * @throws IllegalArgumentException 如果尝试清空必填字段
+    // */
+    // public void validateRequiredFields() {
+    // if (nameSet && (name == null || name.trim().isEmpty())) {
+    // throw new IllegalArgumentException("项目名称不能为空");
+    // }
+    // if (statusSet && (status == null || status.trim().isEmpty())) {
+    // throw new IllegalArgumentException("项目状态不能为空");
+    // }
+    // }
 }

@@ -1,6 +1,8 @@
 package org.example.helloworld.exception;
 
 import org.example.helloworld.utils.Result;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.validation.ConstraintViolation;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
  * - HTTP 200 + businessCode：业务逻辑错误（登录失败、权限不足等）
  */
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler {
 
         // ==================== HTTP 400 Bad Request ====================
@@ -46,6 +50,29 @@ public class GlobalExceptionHandler {
                 String errorMessage = e.getBindingResult().getFieldErrors().stream()
                                 .map(FieldError::getDefaultMessage)
                                 .collect(Collectors.joining("; "));
+
+                return Result.error(HttpStatus.BAD_REQUEST.value())
+                                .message("参数验证失败: " + errorMessage);
+        }
+
+        /**
+         * 处理 HandlerMethodValidationException (Spring 6.1+)
+         * 场景：方法级别的验证失败（@Validated + @ParameterObject）
+         * 返回：HTTP 400 + code 400（协议层错误，code 与 HTTP 状态码一致）
+         */
+        @ExceptionHandler(HandlerMethodValidationException.class)
+        @ResponseStatus(HttpStatus.BAD_REQUEST)
+        public Result handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+                // 提取所有验证错误信息
+                String errorMessage = e.getAllErrors().stream()
+                                .map(error -> error.getDefaultMessage())
+                                .filter(msg -> msg != null && !msg.isEmpty())
+                                .collect(Collectors.joining("; "));
+
+                // 如果没有提取到错误消息，使用默认消息
+                if (errorMessage.isEmpty()) {
+                        errorMessage = "请求参数验证失败";
+                }
 
                 return Result.error(HttpStatus.BAD_REQUEST.value())
                                 .message("参数验证失败: " + errorMessage);
@@ -190,31 +217,18 @@ public class GlobalExceptionHandler {
         // ==================== HTTP 500 Internal Server Error ====================
 
         /**
-         * 处理运行时异常
-         * 场景：未捕获的运行时错误
+         * 处理所有未捕获的异常（兜底处理）
+         * 场景：所有未被上面特定处理器捕获的异常
          * 返回：HTTP 500 + code 500（协议层错误，code 与 HTTP 状态码一致）
-         */
-        @ExceptionHandler(RuntimeException.class)
-        @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-        public Result handleRuntimeException(RuntimeException e) {
-                // 记录日志
-                System.err.println("运行时异常: " + e.getMessage());
-                e.printStackTrace();
-
-                return Result.error(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                                .message("系统错误: " + e.getMessage());
-        }
-
-        /**
-         * 处理所有未捕获的异常
-         * 场景：兜底处理
-         * 返回：HTTP 500 + code 500（协议层错误，code 与 HTTP 状态码一致）
+         * 
+         * 注意：这个处理器会捕获所有异常，包括 RuntimeException
+         * 因此放在最后，让更具体的处理器先处理
          */
         @ExceptionHandler(Exception.class)
         @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
         public Result handleException(Exception e) {
                 // 记录日志
-                System.err.println("系统异常: " + e.getMessage());
+                System.err.println("系统异常: " + e.getClass().getName() + " - " + e.getMessage());
                 e.printStackTrace();
 
                 return Result.error(HttpStatus.INTERNAL_SERVER_ERROR.value())

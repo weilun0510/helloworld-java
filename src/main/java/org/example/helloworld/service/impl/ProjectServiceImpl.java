@@ -148,44 +148,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, ProjectEntity
             return false;
         }
 
-        // 验证必填字段不能清空
-        dto.validateRequiredFields();
-
         // 使用 LambdaUpdateWrapper 只更新已设置的字段
         LambdaUpdateWrapper<ProjectEntity> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(ProjectEntity::getId, id);
-
-        boolean hasUpdate = false;
-
-        // 1. 更新 name（必填字段，只有传入且非空时才更新）
-        if (dto.isNameSet() && dto.getName() != null && !dto.getName().trim().isEmpty()) {
-            updateWrapper.set(ProjectEntity::getName, dto.getName().trim());
-            hasUpdate = true;
-        }
-
-        // 2. 更新 status（必填字段，只有传入且非空时才更新）
-        if (dto.isStatusSet() && dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
-            updateWrapper.set(ProjectEntity::getStatus, dto.getStatus().trim());
-            hasUpdate = true;
-        }
-
-        // 3. 更新 cover（可选字段，允许清空）
-        if (dto.isCoverSet()) {
-            // 传入了 cover 字段
-            if (dto.getCover() == null || dto.getCover().isEmpty()) {
-                // null 或 "" 都表示清空
-                updateWrapper.set(ProjectEntity::getCover, null);
-            } else {
-                // 更新为新值
-                updateWrapper.set(ProjectEntity::getCover, dto.getCover().trim());
-            }
-            hasUpdate = true;
-        }
-
-        // 如果没有任何字段需要更新，直接返回 true
-        if (!hasUpdate) {
-            return true;
-        }
+        updateWrapper.eq(ProjectEntity::getId, id)
+                .set(ProjectEntity::getName, dto.getName().trim())
+                .set(ProjectEntity::getStatus, dto.getStatus().trim())
+                .set(ProjectEntity::getCover,
+                        dto.getCover() == null || dto.getCover().isEmpty() ? null : dto.getCover().trim());
 
         // 执行更新
         return this.update(updateWrapper);
