@@ -7,31 +7,27 @@ import java.util.Map;
  * 统一响应结果类
  * 
  * 设计原则：
- * 1. HTTP 状态码表示协议层状态（由 Spring 自动设置或通过 @ResponseStatus 设置）
- * 2. code 字段：
- * - 业务成功：code = 0
- * - 业务失败：code = 业务错误码（如 10101 登录失败）
- * - 协议错误：code = HTTP 状态码（如 400、404、500）
+ * - 统一返回 HTTP 200 + 业务code
+ * - 前端只需判断 code 即可，无需关注 HTTP 状态码
  * 
  * 响应结构：
  * {
- * "code": 0, // 业务错误码（0=成功）或 HTTP 状态码（协议错误）
+ * "code": 0, // 业务状态码（0=成功，非0=失败）
  * "message": "操作成功", // 提示信息
  * "data": {} // 业务数据
  * }
  * 
  * 使用场景：
  * 1. 业务成功：HTTP 200 + code 0
- * 2. 业务失败：HTTP 200 + code 非0（如 10101 登录失败）
- * 3. 协议错误：HTTP 4xx/5xx + code = HTTP 状态码（如 HTTP 400 + code 400）
+ * 2. 业务失败：HTTP 200 + code 非0（见 BusinessCode 枚举）
+ * 3. 系统错误：HTTP 200 + code 5xxxx
  */
 public class Result {
 
     /**
-     * 错误码
-     * 0 = 业务成功
-     * 业务错误码 = 业务失败（见 BusinessCode）
-     * HTTP 状态码 = 协议错误（如 400、404、500）
+     * 业务状态码
+     * 0 = 成功
+     * 非0 = 失败（见 BusinessCode 枚举）
      */
     private Integer code;
 
@@ -76,7 +72,7 @@ public class Result {
     private Result() {
     }
 
-    // ==================== 成功响应 ====================
+    // ==================== 静态工厂方法 ====================
 
     /**
      * 操作成功
@@ -91,10 +87,8 @@ public class Result {
         return result;
     }
 
-    // ==================== 业务失败响应（HTTP 200，但业务失败）====================
-
     /**
-     * 业务失败（通用）
+     * 业务失败（使用枚举）
      * HTTP 200 + code 非0
      * 
      * @param businessCode 业务错误码
@@ -119,42 +113,6 @@ public class Result {
         Result result = new Result();
         result.setCode(businessCode.getCode());
         result.setMessage(message);
-        return result;
-    }
-
-    /**
-     * 登录失败
-     * HTTP 200 + code 10101
-     * 
-     * @return Result 对象
-     */
-    public static Result loginFailed() {
-        return fail(BusinessCode.LOGIN_FAILED);
-    }
-
-    /**
-     * 权限不足
-     * HTTP 200 + code 10201
-     * 
-     * @return Result 对象
-     */
-    public static Result permissionDenied() {
-        return fail(BusinessCode.PERMISSION_DENIED);
-    }
-
-    // ==================== 协议错误响应（HTTP 4xx/5xx）====================
-
-    /**
-     * 错误响应（协议层错误）
-     * 用于 HTTP 协议层错误，code 与 HTTP 状态码保持一致
-     * 
-     * @param httpStatusCode HTTP 状态码（如 400、404、500）
-     * @return Result 对象
-     */
-    public static Result error(int httpStatusCode) {
-        Result result = new Result();
-        result.setCode(httpStatusCode);
-        result.setMessage("系统错误");
         return result;
     }
 

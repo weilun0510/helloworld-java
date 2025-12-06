@@ -3,6 +3,7 @@ package org.example.helloworld.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.helloworld.service.FileService;
+import org.example.helloworld.utils.BusinessCode;
 import org.example.helloworld.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class FileController {
   public Result upload(@RequestParam("file") MultipartFile file) {
     // 基础参数校验
     if (file == null || file.isEmpty()) {
-      return Result.error(400).message("请选择要上传的文件");
+      return Result.fail(BusinessCode.PARAM_MISSING).message("请选择要上传的文件");
     }
 
     try {
@@ -44,11 +45,11 @@ public class FileController {
           .data("size", file.getSize());
     } catch (IllegalArgumentException e) {
       // 业务异常（如文件类型不支持）
-      return Result.error(400).message(e.getMessage());
+      return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR).message(e.getMessage());
     } catch (Exception e) {
       // 系统异常
       e.printStackTrace();
-      return Result.error(500).message("上传失败：" + e.getMessage());
+      return Result.fail(BusinessCode.INTERNAL_ERROR).message("上传失败：" + e.getMessage());
     }
   }
 
@@ -63,7 +64,7 @@ public class FileController {
   public Result batchUpload(@RequestParam("files") MultipartFile[] files) {
     // 基础参数校验
     if (files == null || files.length == 0) {
-      return Result.error(400).message("请选择要上传的文件");
+      return Result.fail(BusinessCode.PARAM_MISSING).message("请选择要上传的文件");
     }
 
     try {
@@ -74,11 +75,11 @@ public class FileController {
           .data("count", files.length);
     } catch (IllegalArgumentException e) {
       // 业务异常
-      return Result.error(400).message(e.getMessage());
+      return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR).message(e.getMessage());
     } catch (Exception e) {
       // 系统异常
       e.printStackTrace();
-      return Result.error(500).message("批量上传失败：" + e.getMessage());
+      return Result.fail(BusinessCode.INTERNAL_ERROR).message("批量上传失败：" + e.getMessage());
     }
   }
 
@@ -93,7 +94,7 @@ public class FileController {
   public Result delete(@RequestParam("fileUrl") String fileUrl) {
     // 基础参数校验
     if (fileUrl == null || fileUrl.trim().isEmpty()) {
-      return Result.error(400).message("文件URL不能为空");
+      return Result.fail(BusinessCode.PARAM_MISSING).message("文件URL不能为空");
     }
 
     try {
@@ -101,7 +102,7 @@ public class FileController {
       return Result.ok().message("删除成功");
     } catch (Exception e) {
       e.printStackTrace();
-      return Result.error(500).message("删除失败：" + e.getMessage());
+      return Result.fail(BusinessCode.INTERNAL_ERROR).message("删除失败：" + e.getMessage());
     }
   }
 }

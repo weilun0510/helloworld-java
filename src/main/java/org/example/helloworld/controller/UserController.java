@@ -10,6 +10,7 @@ import org.example.helloworld.dto.LoginDTO;
 import org.example.helloworld.dto.RegisterDTO;
 import org.example.helloworld.entity.UserEntity;
 import org.example.helloworld.service.UserService;
+import org.example.helloworld.utils.BusinessCode;
 import org.example.helloworld.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -61,13 +62,13 @@ public class UserController {
         Integer userId = (Integer) request.getAttribute("userId");
 
         if (userId == null) {
-            return Result.error(500).message("获取用户信息失败");
+            return Result.fail(BusinessCode.INTERNAL_ERROR).message("获取用户信息失败");
         }
 
         // 根据用户ID查询用户信息
         UserEntity user = userService.getById(userId);
         if (user == null) {
-            return Result.error(404).message("用户不存在");
+            return Result.fail(BusinessCode.USER_NOT_FOUND);
         }
 
         // 设置默认头像（业务逻辑）
@@ -102,7 +103,7 @@ public class UserController {
         if (success) {
             return Result.ok().message("注册成功");
         } else {
-            return Result.error(500).message("注册失败");
+            return Result.fail(BusinessCode.OPERATION_FAILED).message("注册失败");
         }
     }
 
@@ -135,7 +136,7 @@ public class UserController {
                     .message("插入成功")
                     .data("id", user.getId());
         } else {
-            return Result.error(500).message("插入失败");
+            return Result.fail(BusinessCode.OPERATION_FAILED).message("插入失败");
         }
     }
 
@@ -153,7 +154,7 @@ public class UserController {
             user.setPassword(null);
             return Result.ok().data("user", user);
         } else {
-            return Result.error(404).message("用户不存在");
+            return Result.fail(BusinessCode.USER_NOT_FOUND);
         }
     }
 
@@ -169,7 +170,7 @@ public class UserController {
         if (success) {
             return Result.ok().message("删除成功");
         } else {
-            return Result.error(500).message("删除失败");
+            return Result.fail(BusinessCode.OPERATION_FAILED).message("删除失败");
         }
     }
 
@@ -187,7 +188,7 @@ public class UserController {
         if (success) {
             return Result.ok().message("更新成功");
         } else {
-            return Result.error(500).message("更新失败");
+            return Result.fail(BusinessCode.OPERATION_FAILED).message("更新失败");
         }
     }
 

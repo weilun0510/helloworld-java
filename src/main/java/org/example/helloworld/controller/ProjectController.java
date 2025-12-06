@@ -15,6 +15,7 @@ import org.example.helloworld.dto.ProjectResponseDTO;
 import org.example.helloworld.dto.UpdateProjectDTO;
 import org.example.helloworld.entity.ProjectEntity;
 import org.example.helloworld.service.ProjectService;
+import org.example.helloworld.utils.BusinessCode;
 import org.example.helloworld.utils.Result;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,7 +90,7 @@ public class ProjectController {
 
     ProjectEntity project = projectService.getById(id);
     if (project == null) {
-      return Result.error(404).message("项目不存在，ID: " + id);
+      return Result.fail(BusinessCode.PROJECT_NOT_FOUND).message("项目不存在，ID: " + id);
     }
 
     // 转换为 ResponseDTO
@@ -138,7 +139,7 @@ public class ProjectController {
     // Service 层会处理业务逻辑
     boolean success = projectService.updateProject(id, dto);
     if (!success) {
-      return Result.error(404).message("项目不存在，ID: " + id);
+      return Result.fail(BusinessCode.PROJECT_NOT_FOUND).message("项目不存在，ID: " + id);
     }
 
     // 返回更新后的项目信息
@@ -164,7 +165,7 @@ public class ProjectController {
     // 检查项目是否存在
     ProjectEntity project = projectService.getById(id);
     if (project == null) {
-      return Result.error(404).message("项目不存在，ID: " + id);
+      return Result.fail(BusinessCode.PROJECT_NOT_FOUND).message("项目不存在，ID: " + id);
     }
 
     projectService.removeById(id);
@@ -190,7 +191,7 @@ public class ProjectController {
     if (success) {
       return Result.ok().message("批量删除成功，共删除 " + ids.size() + " 个项目");
     } else {
-      return Result.error(500).message("批量删除失败");
+      return Result.fail(BusinessCode.OPERATION_FAILED).message("批量删除失败");
     }
   }
 }

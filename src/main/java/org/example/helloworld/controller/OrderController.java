@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.helloworld.entity.OrderEntity;
 import org.example.helloworld.service.OrderService;
+import org.example.helloworld.utils.BusinessCode;
 import org.example.helloworld.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,7 +61,7 @@ public class OrderController {
     if (order != null) {
       return Result.ok().data("order", order);
     } else {
-      return Result.error(404).message("订单不存在");
+      return Result.fail(BusinessCode.ORDER_NOT_FOUND);
     }
   }
 }

@@ -1,6 +1,7 @@
 package org.example.helloworld.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.helloworld.utils.BusinessCode;
 import org.example.helloworld.utils.JwtUtil;
 import org.example.helloworld.utils.Result;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * 登录认证拦截器
  * 验证请求头中的 Token 是否有效
+ * 返回：HTTP 200 + 业务code
  */
 public class LoginInterceptor implements HandlerInterceptor {
 
@@ -37,18 +39,18 @@ public class LoginInterceptor implements HandlerInterceptor {
         }
 
         // 2. 检查 Token 是否存在
-        if (token == null || token.trim().isEmpty()) {
-            System.out.println("LoginInterceptor - Token 不存在");
-            sendUnauthorizedResponse(response, "未登录，请先登录");
-            return false;
-        }
+        // if (token == null || token.trim().isEmpty()) {
+        // System.out.println("LoginInterceptor - Token 不存在");
+        // sendErrorResponse(response, BusinessCode.TOKEN_MISSING);
+        // return false;
+        // }
 
         // 3. 验证 Token 是否有效
         try {
             boolean isValid = JwtUtil.validateToken(token);
             if (!isValid) {
                 System.out.println("LoginInterceptor - Token 验证失败");
-                sendUnauthorizedResponse(response, "Token 无效或已过期");
+                sendErrorResponse(response, BusinessCode.TOKEN_INVALID);
                 return false;
             }
 
@@ -63,24 +65,24 @@ public class LoginInterceptor implements HandlerInterceptor {
 
         } catch (Exception e) {
             System.out.println("LoginInterceptor - Token 解析异常: " + e.getMessage());
-            sendUnauthorizedResponse(response, "Token 无效或已过期");
+            sendErrorResponse(response, BusinessCode.TOKEN_INVALID);
             return false;
         }
     }
 
     /**
-     * 发送 401 未授权响应
+     * 发送错误响应
+     * 返回：HTTP 200 + 业务code
      * 
-     * @param response 响应对象
-     * @param message  错误信息
+     * @param response     响应对象
+     * @param businessCode 业务错误码
      * @throws Exception 异常
      */
-    private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws Exception {
-        response.setStatus(HttpServletResponse.SC_OK); // 401
+    private void sendErrorResponse(HttpServletResponse response, BusinessCode businessCode) throws Exception {
+        response.setStatus(HttpServletResponse.SC_OK); // 统一返回 HTTP 200
         response.setContentType("application/json;charset=UTF-8");
 
-        Result result = Result.error(401)
-                .message(message);
+        Result result = Result.fail(businessCode);
 
         ObjectMapper objectMapper = new ObjectMapper();
         String json = objectMapper.writeValueAsString(result);
