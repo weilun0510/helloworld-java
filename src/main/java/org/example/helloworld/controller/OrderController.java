@@ -32,9 +32,9 @@ public class OrderController {
    */
   @Operation(summary = "查询所有订单", description = "查询所有订单及其关联的用户信息")
   @GetMapping("/findAll")
-  public Result findAll() {
+  public Result<List<OrderEntity>> findAll() {
     List<OrderEntity> orders = orderService.getAllOrdersWithUsers();
-    return Result.ok().data("orders", orders);
+    return Result.ok(orders);
   }
 
   /**
@@ -44,9 +44,9 @@ public class OrderController {
    * @return 订单列表
    */
   @GetMapping("/user/{uid}")
-  public Result getOrdersByUserId(@PathVariable Integer uid) {
+  public Result<List<OrderEntity>> getOrdersByUserId(@PathVariable Integer uid) {
     List<OrderEntity> orders = orderService.getOrdersByUserId(uid);
-    return Result.ok().data("orders", orders);
+    return Result.ok(orders);
   }
 
   /**
@@ -56,10 +56,10 @@ public class OrderController {
    * @return 订单详情
    */
   @GetMapping("/{id}")
-  public Result getById(@PathVariable Integer id) {
+  public Result<OrderEntity> getById(@PathVariable Integer id) {
     OrderEntity order = orderService.getById(id);
     if (order != null) {
-      return Result.ok().data("order", order);
+      return Result.ok(order);
     } else {
       return Result.fail(BusinessCode.ORDER_NOT_FOUND);
     }

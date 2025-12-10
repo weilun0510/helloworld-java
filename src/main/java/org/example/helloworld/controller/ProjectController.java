@@ -2,6 +2,9 @@ package org.example.helloworld.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -13,12 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.example.helloworld.dto.CreateProjectDTO;
 import org.example.helloworld.dto.ProjectListDTO;
-import org.example.helloworld.dto.ProjectResponseDTO;
 import org.example.helloworld.dto.UpdateProjectDTO;
+import org.example.helloworld.vo.ProjectVO;
 import org.example.helloworld.entity.ProjectEntity;
 import org.example.helloworld.service.ProjectService;
 import org.example.helloworld.utils.BusinessCode;
 import org.example.helloworld.utils.Result;
+import org.example.helloworld.vo.PageVO;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -38,6 +42,7 @@ import java.util.stream.Collectors;
  * 5. 全局异常处理：使用 GlobalExceptionHandler 统一处理异常
  * 6. RESTful 风格：遵循 REST API 设计规范
  */
+@Slf4j
 @RestController
 @RequestMapping("/project")
 @Tag(name = "项目管理", description = "项目相关的增删改查接口")
@@ -60,23 +65,29 @@ public class ProjectController {
    * @param dto 查询条件 DTO
    * @return 项目列表
    */
-  @Operation(summary = "项目列表")
+  @Operation(summary = "项目列表", description = "支持多条件查询：按名称、状态查询，支持分页和排序", responses = {
+      @ApiResponse(responseCode = "200", description = "查询成功", content = @Content(schema = @Schema(implementation = ProjectPageResult.class)))
+  })
   @GetMapping
-  public Result projectList(@Validated @ParameterObject ProjectListDTO dto) {
+  public Result<PageVO<ProjectVO>> projectList(@Validated @ParameterObject ProjectListDTO dto) {
     // 调用 Service 层查询
     IPage<ProjectEntity> projectPage = projectService.projectList(dto);
 
-    // 转换为 ResponseDTO
-    List<ProjectResponseDTO> records = projectPage.getRecords().stream()
-        .map(ProjectResponseDTO::fromEntity)
+    // 转换为 VO
+    List<ProjectVO> records = projectPage.getRecords().stream()
+        .map(ProjectVO::fromEntity)
         .collect(Collectors.toList());
 
-    return Result.ok()
-        .data("total", projectPage.getTotal())
-        .data("pages", projectPage.getPages())
-        .data("current", projectPage.getCurrent())
-        .data("size", projectPage.getSize())
-        .data("records", records);
+    // 构建分页 VO
+    PageVO<ProjectVO> pageVO = PageVO.<ProjectVO>builder()
+        .total(projectPage.getTotal())
+        .pages(projectPage.getPages())
+        .current(projectPage.getCurrent())
+        .size(projectPage.getSize())
+        .records(records)
+        .build();
+
+    return Result.ok(pageVO);
   }
 
   /**
@@ -85,20 +96,22 @@ public class ProjectController {
    * @param id 项目 ID
    * @return 项目详情
    */
-  @Operation(summary = "项目详情")
+  @Operation(summary = "项目详情", description = "根据项目 ID 查询项目详细信息", responses = {
+      @ApiResponse(responseCode = "200", description = "查询成功", content = @Content(schema = @Schema(implementation = ProjectDetailResult.class)))
+  })
   @GetMapping("/{id}")
-  public Result getById(
+  public Result<ProjectVO> getById(
       @Parameter(description = "项目ID", required = true) @PathVariable @NotNull(message = "项目ID不能为空") @Positive(message = "项目ID必须为正整数") Integer id) {
 
     ProjectEntity project = projectService.getById(id);
     if (project == null) {
-      return Result.fail(BusinessCode.PROJECT_NOT_FOUND).message("项目不存在，ID: " + id);
+      return Result.fail(BusinessCode.PROJECT_NOT_FOUND, "项目不存在，ID: " + id);
     }
 
-    // 转换为 ResponseDTO
-    ProjectResponseDTO responseDTO = ProjectResponseDTO.fromEntity(project);
+    // 转换为 VO
+    ProjectVO projectVO = ProjectVO.fromEntity(project);
 
-    return Result.ok().data("project", responseDTO);
+    return Result.ok(projectVO);
   }
 
   /**
@@ -107,18 +120,16 @@ public class ProjectController {
    * @param dto 创建项目 DTO（自动进行参数验证）
    * @return 创建结果
    */
-  @Operation(summary = "创建项目")
+  @Operation(summary = "创建项目", description = "创建新项目，参数会自动验证")
   @PostMapping
-  public Result create(@Valid @RequestBody CreateProjectDTO dto) {
+  public Result<ProjectVO> create(@Valid @RequestBody CreateProjectDTO dto) {
     // Service 层会抛出 BusinessException，由全局异常处理器处理
     ProjectEntity project = projectService.createProject(dto);
 
-    // 转换为 ResponseDTO
-    ProjectResponseDTO responseDTO = ProjectResponseDTO.fromEntity(project);
+    // 转换为 VO
+    ProjectVO projectVO = ProjectVO.fromEntity(project);
 
-    return Result.ok()
-        .message("创建成功")
-        .data("project", responseDTO);
+    return Result.ok("创建成功", projectVO);
   }
 
   /**
@@ -133,7 +144,7 @@ public class ProjectController {
    */
   @Operation(summary = "更新项目（部分更新）", description = "只更新传入的字段，未传入的字段保持不变。推荐使用此接口而不是 PUT。")
   @PatchMapping("/{id}")
-  public Result update(
+  public Result<ProjectVO> update(
       @Parameter(description = "项目ID", required = true) @PathVariable @NotNull(message = "项目ID不能为空") @Positive(message = "项目ID必须为正整数") Integer id,
 
       @Valid @RequestBody UpdateProjectDTO dto) {
@@ -141,16 +152,14 @@ public class ProjectController {
     // Service 层会处理业务逻辑
     boolean success = projectService.updateProject(id, dto);
     if (!success) {
-      return Result.fail(BusinessCode.PROJECT_NOT_FOUND).message("项目不存在，ID: " + id);
+      return Result.fail(BusinessCode.PROJECT_NOT_FOUND, "项目不存在，ID: " + id);
     }
 
     // 返回更新后的项目信息
     ProjectEntity updatedProject = projectService.getById(id);
-    ProjectResponseDTO responseDTO = ProjectResponseDTO.fromEntity(updatedProject);
+    ProjectVO projectVO = ProjectVO.fromEntity(updatedProject);
 
-    return Result.ok()
-        .message("更新成功")
-        .data("project", responseDTO);
+    return Result.ok("更新成功", projectVO);
   }
 
   /**
@@ -161,17 +170,17 @@ public class ProjectController {
    */
   @Operation(summary = "删除项目", description = "根据项目 ID 删除项目")
   @DeleteMapping("/{id}")
-  public Result delete(
+  public Result<Void> delete(
       @Parameter(description = "项目ID", required = true) @PathVariable @NotNull(message = "项目ID不能为空") @Positive(message = "项目ID必须为正整数") Integer id) {
 
     // 检查项目是否存在
     ProjectEntity project = projectService.getById(id);
     if (project == null) {
-      return Result.fail(BusinessCode.PROJECT_NOT_FOUND).message("项目不存在，ID: " + id);
+      return Result.fail(BusinessCode.PROJECT_NOT_FOUND, "项目不存在，ID: " + id);
     }
 
     projectService.removeById(id);
-    return Result.ok().message("删除成功");
+    return Result.ok("删除成功", null);
   }
 
   /**
@@ -182,7 +191,7 @@ public class ProjectController {
    */
   @Operation(summary = "批量删除项目", description = "根据项目 ID 列表批量删除项目")
   @DeleteMapping("/batch")
-  public Result batchDelete(
+  public Result<Void> batchDelete(
       @Parameter(description = "项目ID列表", required = true) @RequestBody List<Integer> ids) {
 
     if (ids == null || ids.isEmpty()) {
@@ -191,9 +200,25 @@ public class ProjectController {
 
     boolean success = projectService.removeByIds(ids);
     if (success) {
-      return Result.ok().message("批量删除成功，共删除 " + ids.size() + " 个项目");
+      return Result.ok("批量删除成功，共删除 " + ids.size() + " 个项目", null);
     } else {
-      return Result.fail(BusinessCode.OPERATION_FAILED).message("批量删除失败");
+      return Result.fail(BusinessCode.OPERATION_FAILED, "批量删除失败");
     }
+  }
+
+  // ==================== 内部类：用于 Swagger 文档 ====================
+
+  /**
+   * 项目分页响应（用于 Swagger 文档展示）
+   */
+  @Schema(description = "项目分页响应")
+  private static class ProjectPageResult extends Result<PageVO<ProjectVO>> {
+  }
+
+  /**
+   * 项目详情响应（用于 Swagger 文档展示）
+   */
+  @Schema(description = "项目详情响应")
+  private static class ProjectDetailResult extends Result<ProjectVO> {
   }
 }

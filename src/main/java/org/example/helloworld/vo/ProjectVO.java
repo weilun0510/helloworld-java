@@ -1,19 +1,24 @@
-package org.example.helloworld.dto;
+package org.example.helloworld.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 /**
- * 项目响应 DTO
+ * 项目响应 VO
  * 用于返回项目信息给前端
- * 可以根据需要隐藏敏感字段，或添加计算字段
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "项目响应数据")
-public class ProjectResponseDTO {
+public class ProjectVO {
 
   /**
    * 项目 ID
@@ -47,23 +52,23 @@ public class ProjectResponseDTO {
   private LocalDateTime createTime;
 
   /**
-   * 从 Entity 转换为 ResponseDTO
+   * 从 Entity 转换为 VO
    * 
    * @param entity 项目实体
-   * @return 项目响应 DTO
+   * @return 项目响应 VO
    */
-  public static ProjectResponseDTO fromEntity(org.example.helloworld.entity.ProjectEntity entity) {
+  public static ProjectVO fromEntity(org.example.helloworld.entity.ProjectEntity entity) {
     if (entity == null) {
       return null;
     }
 
-    ProjectResponseDTO dto = new ProjectResponseDTO();
-    dto.setId(entity.getId());
-    dto.setName(entity.getName());
-    dto.setStatus(entity.getStatus());
-    dto.setCover(entity.getCover());
-    dto.setCreateTime(entity.getCreateTime());
-
-    return dto;
+    return ProjectVO.builder()
+        .id(entity.getId())
+        .name(entity.getName())
+        .status(entity.getStatus())
+        .cover(entity.getCover())
+        .createTime(entity.getCreateTime())
+        .build();
   }
 }
+

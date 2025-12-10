@@ -1,55 +1,48 @@
 package org.example.helloworld.utils;
 
-import java.util.HashMap;
-import java.util.Map;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 统一响应结果类
+ * 统一响应结果类（泛型版本）
  * 
  * 设计原则：
  * - 统一返回 HTTP 200 + 业务code
  * - 前端只需判断 code 即可，无需关注 HTTP 状态码
+ * - 使用泛型支持类型安全和 Swagger 文档生成
  * 
  * 响应结构：
  * {
  * "code": 0, // 业务状态码（0=成功，非0=失败）
  * "message": "操作成功", // 提示信息
- * "data": {} // 业务数据
+ * "data": {} // 业务数据（泛型）
  * }
  * 
- * 使用场景：
- * 1. 业务成功：HTTP 200 + code 0
- * 2. 业务失败：HTTP 200 + code 非0（见 BusinessCode 枚举）
- * 3. 系统错误：HTTP 200 + code 5xxxx
+ * @param <T> 业务数据类型
  */
-public class Result {
+@Schema(description = "统一响应结果")
+public class Result<T> {
 
     /**
      * 业务状态码
      * 0 = 成功
      * 非0 = 失败（见 BusinessCode 枚举）
      */
+    @Schema(description = "业务状态码，0表示成功，非0表示失败", example = "0")
     private Integer code;
 
     /**
      * 提示信息
      */
+    @Schema(description = "提示信息", example = "操作成功")
     private String message;
 
     /**
      * 业务数据
      */
-    private Map<String, Object> data = new HashMap<>();
+    @Schema(description = "业务数据")
+    private T data;
 
     // ==================== Getters & Setters ====================
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
 
     public Integer getCode() {
         return code;
@@ -59,32 +52,66 @@ public class Result {
         this.code = code;
     }
 
-    public Map<String, Object> getData() {
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
         return data;
     }
 
-    public void setData(Map<String, Object> data) {
+    public void setData(T data) {
         this.data = data;
     }
 
     // ==================== 构造方法 ====================
 
-    private Result() {
+    public Result() {
+    }
+
+    private Result(Integer code, String message, T data) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
     }
 
     // ==================== 静态工厂方法 ====================
 
     /**
-     * 操作成功
+     * 操作成功（无数据）
      * HTTP 200 + code 0
      * 
      * @return Result 对象
      */
-    public static Result ok() {
-        Result result = new Result();
-        result.setCode(BusinessCode.SUCCESS.getCode());
-        result.setMessage(BusinessCode.SUCCESS.getMessage());
-        return result;
+    public static <T> Result<T> ok() {
+        return new Result<>(BusinessCode.SUCCESS.getCode(), BusinessCode.SUCCESS.getMessage(), null);
+    }
+
+    /**
+     * 操作成功（带数据）
+     * HTTP 200 + code 0
+     * 
+     * @param data 业务数据
+     * @return Result 对象
+     */
+    public static <T> Result<T> ok(T data) {
+        return new Result<>(BusinessCode.SUCCESS.getCode(), BusinessCode.SUCCESS.getMessage(), data);
+    }
+
+    /**
+     * 操作成功（带消息和数据）
+     * HTTP 200 + code 0
+     * 
+     * @param message 提示消息
+     * @param data    业务数据
+     * @return Result 对象
+     */
+    public static <T> Result<T> ok(String message, T data) {
+        return new Result<>(BusinessCode.SUCCESS.getCode(), message, data);
     }
 
     /**
@@ -94,11 +121,8 @@ public class Result {
      * @param businessCode 业务错误码
      * @return Result 对象
      */
-    public static Result fail(BusinessCode businessCode) {
-        Result result = new Result();
-        result.setCode(businessCode.getCode());
-        result.setMessage(businessCode.getMessage());
-        return result;
+    public static <T> Result<T> fail(BusinessCode businessCode) {
+        return new Result<>(businessCode.getCode(), businessCode.getMessage(), null);
     }
 
     /**
@@ -109,31 +133,54 @@ public class Result {
      * @param message      自定义消息
      * @return Result 对象
      */
-    public static Result fail(BusinessCode businessCode, String message) {
-        Result result = new Result();
-        result.setCode(businessCode.getCode());
-        result.setMessage(message);
-        return result;
+    public static <T> Result<T> fail(BusinessCode businessCode, String message) {
+        return new Result<>(businessCode.getCode(), message, null);
     }
 
-    // ==================== 链式调用方法 ====================
+    /**
+     * 业务失败（带数据）
+     * HTTP 200 + code 非0
+     * 
+     * @param businessCode 业务错误码
+     * @param message      自定义消息
+     * @param data         业务数据
+     * @return Result 对象
+     */
+    public static <T> Result<T> fail(BusinessCode businessCode, String message, T data) {
+        return new Result<>(businessCode.getCode(), message, data);
+    }
 
-    public Result message(String message) {
+    // ==================== 链式调用方法（向后兼容）====================
+
+    /**
+     * 设置消息（链式调用）
+     * 
+     * @param message 提示消息
+     * @return Result 对象
+     */
+    public Result<T> message(String message) {
         this.setMessage(message);
         return this;
     }
 
-    public Result code(Integer code) {
+    /**
+     * 设置状态码（链式调用）
+     * 
+     * @param code 状态码
+     * @return Result 对象
+     */
+    public Result<T> code(Integer code) {
         this.setCode(code);
         return this;
     }
 
-    public Result data(String key, Object value) {
-        this.data.put(key, value);
-        return this;
-    }
-
-    public Result data(Map<String, Object> data) {
+    /**
+     * 设置数据（链式调用）
+     * 
+     * @param data 业务数据
+     * @return Result 对象
+     */
+    public Result<T> data(T data) {
         this.setData(data);
         return this;
     }

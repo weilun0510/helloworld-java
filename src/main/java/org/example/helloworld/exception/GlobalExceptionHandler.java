@@ -51,14 +51,13 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(MethodArgumentNotValidException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        public Result<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
                 // 提取所有字段错误信息
                 String errorMessage = e.getBindingResult().getFieldErrors().stream()
                                 .map(FieldError::getDefaultMessage)
                                 .collect(Collectors.joining("; "));
 
-                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR)
-                                .message("参数验证失败: " + errorMessage);
+                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR, "参数验证失败: " + errorMessage);
         }
 
         /**
@@ -68,7 +67,7 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(HandlerMethodValidationException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+        public Result<Void> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
                 // 提取所有验证错误信息
                 String errorMessage = e.getAllErrors().stream()
                                 .map(error -> error.getDefaultMessage())
@@ -80,8 +79,7 @@ public class GlobalExceptionHandler {
                         errorMessage = "请求参数验证失败";
                 }
 
-                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR)
-                                .message("参数验证失败: " + errorMessage);
+                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR, "参数验证失败: " + errorMessage);
         }
 
         /**
@@ -91,13 +89,12 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(ConstraintViolationException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleConstraintViolationException(ConstraintViolationException e) {
+        public Result<Void> handleConstraintViolationException(ConstraintViolationException e) {
                 String errorMessage = e.getConstraintViolations().stream()
                                 .map(ConstraintViolation::getMessage)
                                 .collect(Collectors.joining("; "));
 
-                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR)
-                                .message("参数验证失败: " + errorMessage);
+                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR, "参数验证失败: " + errorMessage);
         }
 
         /**
@@ -107,13 +104,12 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(BindException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleBindException(BindException e) {
+        public Result<Void> handleBindException(BindException e) {
                 String errorMessage = e.getFieldErrors().stream()
                                 .map(FieldError::getDefaultMessage)
                                 .collect(Collectors.joining("; "));
 
-                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR)
-                                .message("参数绑定失败: " + errorMessage);
+                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR, "参数绑定失败: " + errorMessage);
         }
 
         /**
@@ -123,9 +119,8 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(IllegalArgumentException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleIllegalArgumentException(IllegalArgumentException e) {
-                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR)
-                                .message(e.getMessage());
+        public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
+                return Result.fail(BusinessCode.PARAM_VALIDATION_ERROR, e.getMessage());
         }
 
         /**
@@ -135,7 +130,7 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(HttpMessageNotReadableException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        public Result<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
                 String message = e.getMessage();
                 Throwable cause = e.getCause();
 
@@ -145,9 +140,8 @@ public class GlobalExceptionHandler {
                         String fieldName = extractFieldName(ife.getPath());
                         String targetType = ife.getTargetType() != null ? getTypeName(ife.getTargetType()) : "未知类型";
 
-                        return Result.fail(BusinessCode.PARAM_TYPE_ERROR)
-                                        .message(String.format(
-                                                        "参数类型错误: 字段 '%s' 期望类型为 %s，但实际类型不匹配",
+                        return Result.fail(BusinessCode.PARAM_TYPE_ERROR,
+                                        String.format("参数类型错误: 字段 '%s' 期望类型为 %s，但实际类型不匹配",
                                                         fieldName, targetType));
                 }
 
@@ -172,8 +166,7 @@ public class GlobalExceptionHandler {
                                 friendlyMessage += "。请使用字符串格式，例如 \"值\"";
                         }
 
-                        return Result.fail(BusinessCode.PARAM_TYPE_ERROR)
-                                        .message(friendlyMessage);
+                        return Result.fail(BusinessCode.PARAM_TYPE_ERROR, friendlyMessage);
                 }
 
                 // 处理 Jackson 值实例化异常
@@ -181,22 +174,22 @@ public class GlobalExceptionHandler {
                         ValueInstantiationException vie = (ValueInstantiationException) cause;
                         String fieldName = extractFieldName(vie.getPath());
 
-                        return Result.fail(BusinessCode.PARAM_TYPE_ERROR)
-                                        .message(String.format("参数值错误: 字段 '%s' 的值无效", fieldName));
+                        return Result.fail(BusinessCode.PARAM_TYPE_ERROR,
+                                        String.format("参数值错误: 字段 '%s' 的值无效", fieldName));
                 }
 
                 // 处理其他 JSON 解析错误
                 if (message != null && message.contains("JSON parse error")) {
-                        return Result.fail(BusinessCode.PARAM_FORMAT_ERROR)
-                                        .message("请求参数格式错误: JSON 解析失败，请检查字段类型和格式");
+                        return Result.fail(BusinessCode.PARAM_FORMAT_ERROR,
+                                        "请求参数格式错误: JSON 解析失败，请检查字段类型和格式");
                 } else if (message != null && message.contains("Required request body is missing")) {
-                        return Result.fail(BusinessCode.PARAM_MISSING)
-                                        .message("请求参数错误: 缺少请求体");
+                        return Result.fail(BusinessCode.PARAM_MISSING,
+                                        "请求参数错误: 缺少请求体");
                 } else {
                         // 尝试从原始消息中提取有用信息
                         String friendlyMessage = extractFriendlyMessage(message);
-                        return Result.fail(BusinessCode.PARAM_FORMAT_ERROR)
-                                        .message("请求参数格式错误: " + friendlyMessage);
+                        return Result.fail(BusinessCode.PARAM_FORMAT_ERROR,
+                                        "请求参数格式错误: " + friendlyMessage);
                 }
         }
 
@@ -337,14 +330,14 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
+        public Result<Void> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
                 String contentType = e.getContentType() != null ? e.getContentType().toString() : "未知类型";
                 String supportedTypes = e.getSupportedMediaTypes() != null && !e.getSupportedMediaTypes().isEmpty()
                                 ? e.getSupportedMediaTypes().toString()
                                 : "application/json";
 
-                return Result.fail(BusinessCode.PARAM_FORMAT_ERROR)
-                                .message(String.format("请求参数格式错误: Content-Type '%s' 不支持，请使用 %s",
+                return Result.fail(BusinessCode.PARAM_FORMAT_ERROR,
+                                String.format("请求参数格式错误: Content-Type '%s' 不支持，请使用 %s",
                                                 contentType, supportedTypes));
         }
 
@@ -355,13 +348,13 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(MethodArgumentTypeMismatchException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        public Result<Void> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
                 String parameterName = e.getName();
                 String requiredType = e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "未知类型";
                 String actualValue = e.getValue() != null ? e.getValue().toString() : "null";
 
-                return Result.fail(BusinessCode.PARAM_TYPE_ERROR)
-                                .message(String.format("参数类型错误: 参数 '%s' 期望类型为 %s，但实际值为 '%s'",
+                return Result.fail(BusinessCode.PARAM_TYPE_ERROR,
+                                String.format("参数类型错误: 参数 '%s' 期望类型为 %s，但实际值为 '%s'",
                                                 parameterName, requiredType, actualValue));
         }
 
@@ -372,12 +365,12 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(MissingServletRequestParameterException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        public Result<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
                 String parameterName = e.getParameterName();
                 String parameterType = e.getParameterType();
 
-                return Result.fail(BusinessCode.PARAM_MISSING)
-                                .message(String.format("缺少必需参数: 参数 '%s' (类型: %s) 是必需的",
+                return Result.fail(BusinessCode.PARAM_MISSING,
+                                String.format("缺少必需参数: 参数 '%s' (类型: %s) 是必需的",
                                                 parameterName, parameterType));
         }
 
@@ -390,7 +383,7 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(BusinessException.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleBusinessException(BusinessException e) {
+        public Result<Void> handleBusinessException(BusinessException e) {
                 return Result.fail(e.getBusinessCode(), e.getMessage());
         }
 
@@ -406,7 +399,7 @@ public class GlobalExceptionHandler {
          */
         @ExceptionHandler(Exception.class)
         @ResponseStatus(HttpStatus.OK)
-        public Result handleException(Exception e) {
+        public Result<Void> handleException(Exception e) {
                 // 记录日志
                 System.err.println("系统异常: " + e.getClass().getName() + " - " +
                                 e.getMessage());
