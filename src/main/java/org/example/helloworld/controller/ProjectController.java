@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
  * 5. 全局异常处理：使用 GlobalExceptionHandler 统一处理异常
  * 6. RESTful 风格：遵循 REST API 设计规范
  */
-@Slf4j
 @RestController
 @RequestMapping("/project")
 @Tag(name = "项目管理", description = "项目相关的增删改查接口")
@@ -61,7 +60,7 @@ public class ProjectController {
    * @param dto 查询条件 DTO
    * @return 项目列表
    */
-  @Operation(summary = "查询项目列表", description = "支持多条件查询：按名称、状态查询，支持分页和排序")
+  @Operation(summary = "项目列表")
   @GetMapping
   public Result projectList(@Validated @ParameterObject ProjectListDTO dto) {
     // 调用 Service 层查询
@@ -86,7 +85,7 @@ public class ProjectController {
    * @param id 项目 ID
    * @return 项目详情
    */
-  @Operation(summary = "查询项目详情", description = "根据项目 ID 查询项目详细信息")
+  @Operation(summary = "项目详情")
   @GetMapping("/{id}")
   public Result getById(
       @Parameter(description = "项目ID", required = true) @PathVariable @NotNull(message = "项目ID不能为空") @Positive(message = "项目ID必须为正整数") Integer id) {
@@ -108,7 +107,7 @@ public class ProjectController {
    * @param dto 创建项目 DTO（自动进行参数验证）
    * @return 创建结果
    */
-  @Operation(summary = "创建项目", description = "创建新项目，参数会自动验证")
+  @Operation(summary = "创建项目")
   @PostMapping
   public Result create(@Valid @RequestBody CreateProjectDTO dto) {
     // Service 层会抛出 BusinessException，由全局异常处理器处理
