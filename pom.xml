@@ -67,26 +67,13 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- OpenAPI-->
-<!--        <dependency>-->
-<!--            <groupId>org.springdoc</groupId>-->
-<!--            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>-->
-<!--            <version>2.3.0</version>-->
-<!--        </dependency>-->
-
         <!-- OpenAPI 3.1.1 支持 -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-
-        <!-- Knife4j 增强 UI（Spring Boot 3.x 用这个版本）-->
-        <dependency>
-            <groupId>com.github.xiaoymin</groupId>
+        <!-- Knife4j 增强 UI -->
+				<dependency>
+            <groupId>com.github.xingfudeshi</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-            <version>4.5.0</version>
-        </dependency>
+            <version>4.6.0</version>
+ 				</dependency>
 
         <dependency>
             <groupId>com.baomidou</groupId>

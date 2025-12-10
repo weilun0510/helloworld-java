@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.extern.slf4j.Slf4j;
+
 import org.example.helloworld.dto.CreateProjectDTO;
 import org.example.helloworld.dto.ProjectListDTO;
 import org.example.helloworld.dto.ProjectResponseDTO;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
  * 5. 全局异常处理：使用 GlobalExceptionHandler 统一处理异常
  * 6. RESTful 风格：遵循 REST API 设计规范
  */
+@Slf4j
 @RestController
 @RequestMapping("/project")
 @Tag(name = "项目管理", description = "项目相关的增删改查接口")

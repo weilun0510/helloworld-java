@@ -408,7 +408,8 @@ public class GlobalExceptionHandler {
         @ResponseStatus(HttpStatus.OK)
         public Result handleException(Exception e) {
                 // 记录日志
-                System.err.println("系统异常: " + e.getClass().getName() + " - " + e.getMessage());
+                System.err.println("系统异常: " + e.getClass().getName() + " - " +
+                                e.getMessage());
                 e.printStackTrace();
 
                 return Result.fail(BusinessCode.INTERNAL_ERROR);

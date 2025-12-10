@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
 import org.example.helloworld.dto.LoginDTO;
 import org.example.helloworld.dto.RegisterDTO;
 import org.example.helloworld.entity.UserEntity;
@@ -21,7 +23,8 @@ import java.util.List;
  * 用户控制器
  * 只依赖 Service 层，不直接使用 Mapper
  */
-@Tag(name = "用户管理", description = "用户相关接口：登录、注册、CRUD")
+@Slf4j
+@Tag(name = "用户管理")
 @RequestMapping("/user")
 @RestController
 public class UserController {
@@ -35,7 +38,7 @@ public class UserController {
      * @param loginDTO 登录请求 DTO（自动进行参数验证）
      * @return 返回 token 和用户信息
      */
-    @Operation(summary = "用户登录", description = "使用用户名和密码登录，返回JWT Token")
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Result login(@Valid @RequestBody LoginDTO loginDTO) {
         // 调用 service 层进行登录校验（参数验证已在 Controller 层完成）
