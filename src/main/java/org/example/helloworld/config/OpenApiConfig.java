@@ -28,15 +28,15 @@ public class OpenApiConfig {
                                                 .title("管理系统接口文档")
                                                 .description("管理系统接口文档")
                                                 .version("v1.0")
-                                                .contact(new Contact().name("CWL").url("")))
-                                .components(new Components()
-                                                .addSecuritySchemes("Bearer认证", new SecurityScheme()
-                                                                .name("Authorization")
-                                                                .type(SecurityScheme.Type.HTTP)
-                                                                .scheme("bearer")
-                                                                .bearerFormat("JWT")
-                                                                .in(SecurityScheme.In.HEADER)
-                                                                .description("请输入 JWT Token，格式: Bearer {token}")));
+                                                .contact(new Contact().name("CWL").url("")));
+                // .components(new Components()
+                // .addSecuritySchemes("Bearer认证", new SecurityScheme()
+                // .name("Authorization")
+                // .type(SecurityScheme.Type.HTTP)
+                // .scheme("bearer")
+                // .bearerFormat("JWT")
+                // .in(SecurityScheme.In.HEADER)
+                // .description("请输入 JWT Token，格式: Bearer {token}")));
         }
 
         /**
